@@ -10,17 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@p5-wrapper/react": "^4.4.2",
     "p5": "^2.0.0",
     "p5js-wrapper": "^1.2.3",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
     "@rollup/plugin-inject": "^5.0.5",
     "@types/p5": "^1.7.6",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "eslint": "^9.22.0",
     "eslint-plugin-react-hooks": "^5.2.0",
