@@ -1,11 +1,13 @@
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { useMemo, useState } from 'react';
 
-type P5CanvasProps = {
+type SimpleDemoCanvasProps = {
   /** The width of the canvas. */
   width?: number;
   /** The height of the canvas. */
   height?: number;
+  /** Additional class names for the container. */
+  className?: string;
 };
 
 const getSketch =
@@ -38,11 +40,15 @@ const getSketch =
   };
 
 /**
- * P5Canvas is a component that renders a simple P5.js canvas.
+ * SimpleDemoCanvas is a component that renders a simple P5.js simple demo.
  *
  * @returns A P5.js canvas inside a div.
  */
-const P5Canvas = ({ height = 800, width = 800 }: P5CanvasProps) => {
+const SimpleDemoCanvas = ({
+  height = 600,
+  width = 800,
+  className = '',
+}: SimpleDemoCanvasProps) => {
   const sketch = useMemo(() => getSketch(width, height), [width, height]);
   const [cursorColor, setCursorColor] = useState(100);
 
@@ -55,17 +61,27 @@ const P5Canvas = ({ height = 800, width = 800 }: P5CanvasProps) => {
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: '10px' }}>
-        <span style={{ marginRight: '10px' }}>Cursor: {cursorColor}</span>
-        <button onClick={handleIncrement} style={{ marginRight: '5px' }}>
+    <div className={`flex flex-col ${className}`}>
+      <div className="flex items-center gap-4 mb-4 self-start">
+        <span className="text-sm font-medium">Cursor Color: {cursorColor}</span>
+        <button
+          onClick={handleIncrement}
+          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
           Lighter (+50)
         </button>
-        <button onClick={handleDecrement}>Darker (-50)</button>
+        <button
+          onClick={handleDecrement}
+          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+        >
+          Darker (-50)
+        </button>
       </div>
-      <ReactP5Wrapper sketch={sketch} cursorColor={cursorColor} />
+      <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+        <ReactP5Wrapper sketch={sketch} cursorColor={cursorColor} />
+      </div>
     </div>
   );
 };
 
-export default P5Canvas;
+export default SimpleDemoCanvas;

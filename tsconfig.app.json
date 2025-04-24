@@ -26,11 +26,12 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@hooks/*": ["src/hooks/*"]
+      "@hooks/*": ["src/hooks/*"],
+      "@components/*": ["src/components/*"],
+      "@layouts/*": ["src/layouts/*"],
+      "@type/*": ["src/type/*"],
+      "@routes/*": ["src/routes/*"]
     }
   },
-  "include": ["src", "src/types"],
-  "alias": {
-    "@p5": "p5js-wrapper"
-  }
+  "include": ["src", "src/type"]
 }
