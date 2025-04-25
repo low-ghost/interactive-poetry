@@ -18,6 +18,11 @@ const navigationConfig = [
     label: 'Simple Demo',
     icon: <GalleryIcon />,
   },
+  {
+    path: AppRoutes.RIPPLE,
+    label: 'Ripple Effect',
+    icon: <GalleryIcon />,
+  },
 ];
 
 type SidebarProps = {

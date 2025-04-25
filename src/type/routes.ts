@@ -8,6 +8,7 @@
 export enum AppRoutes {
   HOME = '/',
   SIMPLE_DEMO = '/simple-demo',
+  RIPPLE = '/ripple',
 }
 
 /**
