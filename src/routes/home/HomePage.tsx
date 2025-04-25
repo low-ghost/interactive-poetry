@@ -1,5 +1,4 @@
-const HomePage = () => {
-  return (
+const HomePage = () => (
     <div className="space-y-8 max-w-4xl mx-auto px-4">
       <section className="text-center py-8">
         <h1 className="text-4xl font-bold mb-4">Interactive Poetry</h1>
@@ -50,6 +49,5 @@ const HomePage = () => {
       </section>
     </div>
   );
-};
 
 export default HomePage;

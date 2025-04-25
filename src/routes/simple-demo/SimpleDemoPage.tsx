@@ -3,8 +3,7 @@ import { lazy, Suspense } from 'react';
 
 const SimpleDemoCanvas = lazy(() => import('./SimpleDemoCanvas'));
 
-const SimpleDemoPage = () => {
-  return (
+const SimpleDemoPage = () => (
     <CanvasLayout
       title="P5.js Simple Demo"
       description="Interact with the canvas below by moving your mouse over it."
@@ -18,6 +17,5 @@ const SimpleDemoPage = () => {
       </Suspense>
     </CanvasLayout>
   );
-};
 
 export default SimpleDemoPage;

@@ -12,8 +12,7 @@ type CanvasLayoutProps = {
 /**
  * A layout component for canvas pages
  */
-const CanvasLayout = ({ title, description, children }: CanvasLayoutProps) => {
-  return (
+const CanvasLayout = ({ title, description, children }: CanvasLayoutProps) => (
     <div className="space-y-4 flex flex-col items-center">
       <h1 className="text-2xl font-bold">{title}</h1>
       <p className="text-gray-600 dark:text-gray-400">{description}</p>
@@ -22,6 +21,5 @@ const CanvasLayout = ({ title, description, children }: CanvasLayoutProps) => {
       </div>
     </div>
   );
-};
 
 export default CanvasLayout;
