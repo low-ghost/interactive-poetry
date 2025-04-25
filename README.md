@@ -28,15 +28,15 @@ export default tseslint.config({
       tsconfigRootDir: import.meta.dirname,
     },
   },
-})
+});
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from 'eslint-plugin-react-x';
+import reactDom from 'eslint-plugin-react-dom';
 
 export default tseslint.config({
   plugins: {
@@ -50,5 +50,42 @@ export default tseslint.config({
     ...reactX.configs['recommended-typescript'].rules,
     ...reactDom.configs.recommended.rules,
   },
-})
+});
 ```
+
+## GitHub Pages Deployment
+
+This project is configured for deployment to GitHub Pages. You can deploy either manually or using GitHub Actions.
+
+### Manual Deployment
+
+To manually deploy the project:
+
+1. Make sure to update the `homepage` field in `package.json` with your GitHub username:
+
+   ```json
+   "homepage": "https://[your-github-username].github.io/interactive-poetry"
+   ```
+
+2. Run the deploy script:
+   ```bash
+   npm run deploy
+   ```
+
+This will build the project and push it to the `gh-pages` branch of your repository.
+
+### Automatic Deployment with GitHub Actions
+
+The project includes a GitHub Actions workflow that automatically deploys the site to GitHub Pages whenever changes are pushed to the `main` branch.
+
+To set up automatic deployment:
+
+1. Make sure your repository has GitHub Pages enabled in repository settings:
+
+   - Go to your repository on GitHub
+   - Navigate to Settings > Pages
+   - Set the source to "GitHub Actions"
+
+2. Push your code to the `main` branch, and the workflow will automatically build and deploy your site.
+
+Note: The first time you deploy, it may take a few minutes for your site to become available at the URL.
