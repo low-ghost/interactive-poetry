@@ -13,7 +13,7 @@ const router = createBrowserRouter(
         <Route
           index
           lazy={async () => ({
-            Component: (await import('./routes/about/AboutPage')).default,
+            Component: (await import('./routes/home/HomePage')).default,
           })}
         />
         <Route
@@ -32,6 +32,9 @@ const router = createBrowserRouter(
       />
     </>,
   ),
+  {
+    basename: import.meta.env.BASE_URL,
+  },
 );
 
 function App() {
