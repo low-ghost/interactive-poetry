@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 /**
  * Type definitions for route configuration
  */
@@ -20,3 +22,13 @@ export type RouteConfig = {
   icon?: string;
   children?: RouteConfig[];
 };
+
+/**
+ * Control panel item type for consistent formatting
+ */
+export interface ControlItem {
+  id: string;
+  label: string;
+  description: string;
+  control: ReactNode;
+}

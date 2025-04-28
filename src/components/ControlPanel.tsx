@@ -1,14 +1,14 @@
+import { ControlItem } from '@type/controls';
 import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import { ControlItem } from '../types/controls';
 
 /**
  * Control panel component with collapsible interface
  */
-interface ControlPanelProps {
+type ControlPanelProps = {
   controls: ControlItem[];
   onReset: () => void;
-}
+};
 
 const ControlPanel = ({ controls, onReset }: ControlPanelProps) => {
   const [isOpen, setIsOpen] = useState(true);

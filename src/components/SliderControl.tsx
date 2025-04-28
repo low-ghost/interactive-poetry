@@ -3,13 +3,13 @@ import { useState } from 'react';
 /**
  * Slider control with value display
  */
-interface SliderControlProps {
+type SliderControlProps = {
   value: number | null;
   onChange: (value: number) => void;
   min: number;
   max: number;
   step: number;
-}
+};
 
 const SliderControl = ({
   value,

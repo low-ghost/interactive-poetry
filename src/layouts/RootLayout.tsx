@@ -1,25 +1,68 @@
 import Sidebar from '@components/Sidebar';
 import useDarkMode from '@hooks/useDarkMode';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 const RootLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [theme, toggleTheme] = useDarkMode();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile viewport on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+
+      // Only set initial state on first mount, not on every resize
+      if (mobile && window.innerWidth < 640) {
+        setSidebarOpen(false);
+      }
+    };
+
+    // Initial check
+    checkMobile();
+
+    // Listen for window resize
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setSidebarOpen((prev) => !prev);
   };
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-900">
+    <div className="flex h-screen bg-white dark:bg-gray-900 overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 flex flex-col overflow-hidden w-full">
         <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            Interactive Poetry Experiments
-          </h2>
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
+              aria-label="Toggle navigation"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          )}
+
+          <div className="flex-1"></div>
+
           <button
             onClick={toggleTheme}
             className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -58,7 +101,7 @@ const RootLayout = () => {
             )}
           </button>
         </header>
-        <main className="p-6">
+        <main className="flex-1 overflow-auto p-6">
           <Outlet />
         </main>
       </div>

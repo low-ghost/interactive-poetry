@@ -1,10 +1,10 @@
+import ControlPanel from '@components/ControlPanel';
+import SliderControl from '@components/SliderControl';
+import TextAreaControl from '@components/TextAreaControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
+import { ControlItem } from '@type/controls';
 import { Color } from 'p5';
 import { useMemo, useState } from 'react';
-import ControlPanel from '../../components/ControlPanel';
-import SliderControl from '../../components/SliderControl';
-import TextAreaControl from '../../components/TextAreaControl';
-import { ControlItem } from '../../types/controls';
 
 type RippleCanvasProps = {
   /** The width of the canvas. */
@@ -64,6 +64,7 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
     decayRate: null as number | null,
     amplitude: null as number | null,
     text: DEFAULT_SONNET,
+    isMobile: false,
   };
 
   const createRipple = (
@@ -247,6 +248,14 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
 
     ripples = updateRipples(ripples);
   };
+
+  p.windowResized = () => {
+    if (p.windowWidth < 768) {
+      p.resizeCanvas(p.windowWidth, p.windowHeight);
+    } else if (p.windowWidth >= 768) {
+      p.resizeCanvas(width, height);
+    }
+  };
 };
 
 /**
@@ -255,8 +264,8 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
  * @returns A P5.js canvas inside a div.
  */
 const RippleCanvas = ({
-  height = 800,
-  width = 800,
+  height = 900,
+  width = 900,
   className = '',
 }: RippleCanvasProps) => {
   const [background, setBackground] = useState(true);

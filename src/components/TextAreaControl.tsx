@@ -4,11 +4,11 @@ import { useRef, useState } from 'react';
 /**
  * Text input control with auto/custom mode
  */
-interface TextAreaControlProps {
+type TextAreaControlProps = {
   value: string | null;
   onChange: (value: string | null) => void;
   defaultValue: string;
-}
+};
 
 const TextAreaControl = ({
   value,
