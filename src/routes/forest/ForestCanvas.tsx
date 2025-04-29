@@ -11,6 +11,9 @@ type ForestCanvasProps = {
   className?: string;
 };
 
+const DEFAULT_SWAY_AMOUNT = 10;
+const DEFAULT_LETTER_DENSITY = 400;
+
 const DEFAULT_POEM = `as if to say
 in the forest
 and of it
@@ -107,7 +110,7 @@ const sketch = (
   let targetYOffset = 0;
 
   p.preload = () => {
-    bodoniFont = p.loadFont('./src/assets/bodoni-72-book.ttf');
+    bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf');
   };
 
   p.setup = () => {
@@ -220,13 +223,15 @@ const sketch = (
  * @returns A P5.js canvas inside a div.
  */
 const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
-  const [letterDensity, setLetterDensity] = useState<number>(400);
-  const [swayAmount, setSwayAmount] = useState<number>(10);
+  const [letterDensity, setLetterDensity] = useState<number>(
+    DEFAULT_LETTER_DENSITY,
+  );
+  const [swayAmount, setSwayAmount] = useState<number>(DEFAULT_SWAY_AMOUNT);
 
   // Handle reset for all controls
   const handleReset = () => {
-    setLetterDensity(400);
-    setSwayAmount(25);
+    setLetterDensity(DEFAULT_LETTER_DENSITY);
+    setSwayAmount(DEFAULT_SWAY_AMOUNT);
   };
 
   // Define control items
@@ -268,7 +273,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
             step={5}
           />
           <button
-            onClick={() => setSwayAmount(25)}
+            onClick={() => setSwayAmount(10)}
             className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
           >
             Reset
