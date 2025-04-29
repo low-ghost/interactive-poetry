@@ -1,55 +1,52 @@
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
-import { useMemo, useState } from 'react';
+import { getCanvasSize } from '@utils/canvas';
+import { useState } from 'react';
 
 type SimpleDemoCanvasProps = {
-  /** The width of the canvas. */
-  width?: number;
-  /** The height of the canvas. */
-  height?: number;
   /** Additional class names for the container. */
   className?: string;
 };
 
-const getSketch =
-  (width: number, height: number) =>
-  (p: P5CanvasInstance<{ cursorColor: number }>) => {
-    let cursorColor = 100;
+const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
+  let cursorColor = 100;
 
-    p.setup = () => {
-      p.createCanvas(width, height);
-      p.background(100);
-    };
-
-    p.updateWithProps = (props) => {
-      if (props.cursorColor) {
-        cursorColor = props.cursorColor;
-      }
-    };
-
-    p.draw = () => {
-      if (
-        p.mouseX >= 0 &&
-        p.mouseY >= 0 &&
-        (p.pmouseX !== p.mouseX || p.pmouseY !== p.mouseY)
-      ) {
-        p.fill(cursorColor, 0, 0);
-        p.noStroke();
-        p.ellipse(p.mouseX, p.mouseY, 20, 20);
-      }
-    };
+  p.setup = () => {
+    const [width, height] = getCanvasSize(p);
+    p.createCanvas(width, height);
+    p.background(100);
   };
+
+  p.windowResized = () => {
+    const [width, height] = getCanvasSize(p);
+    p.resizeCanvas(width, height);
+    p.background(100);
+  };
+
+  p.updateWithProps = (props) => {
+    if (props.cursorColor) {
+      cursorColor = props.cursorColor;
+    }
+  };
+
+  p.draw = () => {
+    if (
+      p.mouseX >= 0 &&
+      p.mouseY >= 0 &&
+      (p.pmouseX !== p.mouseX || p.pmouseY !== p.mouseY)
+    ) {
+      p.fill(cursorColor, 0, 0);
+      p.noStroke();
+      p.ellipse(p.mouseX, p.mouseY, 20, 20);
+    }
+  };
+};
 
 /**
  * SimpleDemoCanvas is a component that renders a simple P5.js simple demo.
  *
  * @returns A P5.js canvas inside a div.
  */
-const SimpleDemoCanvas = ({
-  height = 600,
-  width = 800,
-  className = '',
-}: SimpleDemoCanvasProps) => {
-  const sketch = useMemo(() => getSketch(width, height), [width, height]);
+const SimpleDemoCanvas = ({ className = '' }: SimpleDemoCanvasProps) => {
   const [cursorColor, setCursorColor] = useState(100);
 
   const handleIncrement = () => {

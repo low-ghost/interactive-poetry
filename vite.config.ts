@@ -12,6 +12,8 @@ export default defineConfig({
       '@layouts': '/src/layouts',
       '@type': '/src/type',
       '@routes': '/src/routes',
+      '@constants': '/src/constants',
+      '@utils': '/src/utils',
     },
   },
 });

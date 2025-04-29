@@ -3,14 +3,11 @@ import SliderControl from '@components/SliderControl';
 import TextAreaControl from '@components/TextAreaControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { ControlItem } from '@type/controls';
+import { createRandomColor, getCanvasSize } from '@utils/canvas';
 import { Color } from 'p5';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 type RippleCanvasProps = {
-  /** The width of the canvas. */
-  width?: number;
-  /** The height of the canvas. */
-  height?: number;
   /** Additional class names for the container. */
   className?: string;
 };
@@ -42,16 +39,7 @@ When in eternal lines to time thou grow'st.
 So long as men can breathe or eyes can see,
 So long lives this, and this gives life to thee.`;
 
-/**
- * Creates a random color, using 0-255 for each channel.
- *
- * @param p - The p5 instance.
- * @returns A random color.
- */
-const createRandomColor = (p: P5CanvasInstance) =>
-  p.color(p.random(255), p.random(255), p.random(255));
-
-const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
+const sketch = (p: P5CanvasInstance) => {
   let cols: number;
   let rows: number;
   let chars: string[][];
@@ -173,6 +161,12 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
       }))
       .filter((ripple) => ripple.strength >= 0.01);
 
+  const generateCharacterGrid = (canvasWidth: number, canvasHeight: number) => {
+    cols = p.floor(canvasWidth / CELL_SIZE);
+    rows = p.floor(canvasHeight / CELL_SIZE);
+    chars = createCharacterGrid(rows, cols);
+  };
+
   p.updateWithProps = (props: any) => {
     if (
       props.background !== undefined &&
@@ -195,20 +189,17 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
     if (props.text !== undefined && props.text !== state.text) {
       state.text = props.text;
       // Regenerate character grid when text changes
-      if (cols && rows) {
-        chars = createCharacterGrid(rows, cols);
-      }
+      const [canvasWidth, canvasHeight] = getCanvasSize(p);
+      generateCharacterGrid(canvasWidth, canvasHeight);
     }
   };
 
   p.setup = () => {
-    p.createCanvas(width, height);
+    const [canvasWidth, canvasHeight] = getCanvasSize(p);
+    p.createCanvas(canvasWidth, canvasHeight);
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(14);
-
-    cols = p.floor(width / CELL_SIZE);
-    rows = p.floor(height / CELL_SIZE);
-    chars = createCharacterGrid(rows, cols);
+    generateCharacterGrid(canvasWidth, canvasHeight);
   };
 
   p.mousePressed = () => {
@@ -250,11 +241,9 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
   };
 
   p.windowResized = () => {
-    if (p.windowWidth < 768) {
-      p.resizeCanvas(p.windowWidth, p.windowHeight);
-    } else if (p.windowWidth >= 768) {
-      p.resizeCanvas(width, height);
-    }
+    const [canvasWidth, canvasHeight] = getCanvasSize(p);
+    p.resizeCanvas(canvasWidth, canvasHeight);
+    generateCharacterGrid(canvasWidth, canvasHeight);
   };
 };
 
@@ -263,19 +252,13 @@ const getSketch = (width: number, height: number) => (p: P5CanvasInstance) => {
  *
  * @returns A P5.js canvas inside a div.
  */
-const RippleCanvas = ({
-  height = 900,
-  width = 900,
-  className = '',
-}: RippleCanvasProps) => {
+const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
   const [background, setBackground] = useState(true);
   const [strength, setStrength] = useState<number | null>(null);
   const [growthRate, setGrowthRate] = useState<number | null>(null);
   const [decayRate, setDecayRate] = useState<number | null>(null);
   const [amplitude, setAmplitude] = useState<number | null>(null);
   const [text, setText] = useState<string | null>(null);
-  const sketch = useMemo(() => getSketch(width, height), [width, height]);
-
   // Handle reset for all controls
   const handleReset = () => {
     setBackground(true);
