@@ -24,6 +24,11 @@ const navigationConfig = [
     label: 'Ripple Effect',
     icon: <GalleryIcon />,
   },
+  {
+    path: AppRoutes.FOREST,
+    label: 'Forest',
+    icon: <GalleryIcon />,
+  },
 ];
 
 type SidebarProps = {

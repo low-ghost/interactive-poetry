@@ -29,6 +29,12 @@ const router = createBrowserRouter(
             Component: (await import('./routes/ripple/RipplePage')).default,
           })}
         />
+        <Route
+          path="forest"
+          lazy={async () => ({
+            Component: (await import('./routes/forest/ForestPage')).default,
+          })}
+        />
       </Route>
       <Route
         path="*"
