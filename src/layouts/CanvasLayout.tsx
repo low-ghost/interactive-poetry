@@ -34,10 +34,12 @@ const CanvasLayout = ({
             href={`${GITHUB_BASE_URL}${githubLink}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             title="View source code on GitHub"
+            onClick={(e) => e.stopPropagation()}
           >
-            <GitHubIcon className="h-5 w-5" />
+            <GitHubIcon className="h-4 w-4" />
+            <span>Source</span>
           </a>
         )}
       </div>
