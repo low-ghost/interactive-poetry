@@ -1,4 +1,5 @@
 import ControlPanel from '@components/ControlPanel';
+import ResetButton from '@components/ResetButton';
 import SliderControl from '@components/SliderControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { ControlItem } from '@type/controls';
@@ -6,108 +7,45 @@ import { getCanvasSize } from '@utils/canvas';
 import { FOREST_GREENS_ARRAY, KAHU_BLUE } from '@utils/color';
 import p5 from 'p5';
 import { useState } from 'react';
+import { ETYMOLOGY_LINES, FOREST_TITLE, POEM_LINES, POEM_WORDS } from './poem';
 
 type ForestCanvasProps = {
   /** Additional class names for the container. */
   className?: string;
 };
 
+type Position2D = {
+  x: number;
+  y: number;
+};
+
+type TreePosition = Position2D & {
+  baseX: number;
+  baseY: number;
+  fontSize: number;
+  opacity: number;
+  letterScale: number;
+};
+
+const WORD_DISPLAY_DURATION = 6000; // milliseconds to display words
+const GATHER_ANIMATION_DURATION = 1200; // milliseconds for gathering animation
+
 const DEFAULT_SWAY_AMOUNT = 10;
 const DEFAULT_LETTER_DENSITY = 400;
-
-// Forest distribution parameters based on research
 const DISTRIBUTION_MODE = 'gamma'; // 'random', 'gamma', 'gaussian'
-const DEFAULT_GAMMA_SHAPE = 0.8; // Shape parameter c (default from research ~0.8)
-const DEFAULT_GAMMA_SCALE = 0.05; // Scale parameter b (adjusted from research ~0.033 for better visual display)
+const DEFAULT_GAMMA_SHAPE = 0.8; // Shape parameter c (from research)
+const DEFAULT_GAMMA_SCALE = 0.033; // Scale parameter b (from research)
+const LETTER_SIZE = 16;
 
-const POEM = `as if to say
-in the forest
-and of it
-planting
-the trees
-of my voice
-my fingers
-duplicating
-every part
-of me
-finally as
-beautiful
-as breath
-every
-intersection
-of body
-alive with
-meaning
-and significance
-lost
-running through
-branches
-find me
-where
-I look`;
+type P5ForestInstance = P5CanvasInstance<{
+  letterDensity: number;
+  swayAmount: number;
+  distributionMode?: string;
+  gammaShape?: number;
+  gammaScale?: number;
+}>;
 
-const POEM_WORDS = POEM.split(/\s+/).filter((word) => word.trim().length > 0);
-
-const ETYMOLOGY = `From Middle
-English forest,
-from Old French
-forest, from
-Early Medieval
-Latin forestis,
-likely from
-Frankish *
-forhist ("forest,
-wooded country")
-to Old English
-fyrh(þe)
-("forested
-land"). Old High
-German forst
-("forest"), Old
-Norse fýri-
-("pine forest"),
-in this sense
-mostly displaced
-the native
-Middle English
-word from Old
-Englishwudu
-("wood, forest,
-wooded"), and
-Middle English
-weld, weald, from Old
-English weald
-("modern 'wold,
-wild, weald'
-from Proto-
-Germanic *
-walþuz ("forest
-of trees"), from
-Proto-Indo-European
-*wal-tus
-("forest,
-wooded
-country"), from
-Proto-Germanic *
-walþiz. *furrhō
-("fir, pine").
-from Proto-
-Indo-European
-*perkwu
-("oak"),`;
-
-const FOREST_TITLE = 'fəɹəst';
-
-const sketch = (
-  p: P5CanvasInstance<{
-    letterDensity: number;
-    swayAmount: number;
-    distributionMode?: string;
-    gammaShape?: number;
-    gammaScale?: number;
-  }>,
-) => {
-  const letterSize = 16;
+const sketch = (p: P5ForestInstance) => {
   const state = {
     letterDensity: DEFAULT_LETTER_DENSITY,
     swayAmount: DEFAULT_SWAY_AMOUNT,
@@ -118,19 +56,17 @@ const sketch = (
   let bodoniFont: p5.Font;
 
   let currentWordIndex = 0;
-  const replacedWords: {
+  type ReplacedWord = {
     x: number;
     y: number;
     word: string;
     animationStart: number;
     colorIndex: number;
-    sourcePositions: { x: number; y: number }[];
-  }[] = [];
-  const REPLACE_RADIUS = 80; // pixels around click to replace
-  const WORD_DISPLAY_DURATION = 6000; // milliseconds to display words
-  const GATHER_ANIMATION_DURATION = 1200; // milliseconds for gathering animation
+    sourcePositions: Position2D[];
+  };
+  const replacedWords: ReplacedWord[] = [];
   // Track which t positions are replaced
-  const replacedPositions: { x: number; y: number }[] = [];
+  const replacedPositions: Position2D[] = [];
 
   // Sway variables
   let time = 0;
@@ -142,8 +78,12 @@ const sketch = (
 
   let currentGreenIndex = 0;
 
-  // Generate a gamma-distributed random value
-  // Using acceptance-rejection method
+  /**
+   * Generates a gamma-distributed random value using the acceptance-rejection method.
+   * @param shape - The shape parameter of the gamma distribution
+   * @param scale - The scale parameter of the gamma distribution
+   * @returns A random value from a gamma distribution with the specified parameters
+   */
   const generateGammaRandom = (shape: number, scale: number): number => {
     // For shape >= 1, we use Marsaglia and Tsang's method
     if (shape >= 1) {
@@ -167,13 +107,323 @@ const sketch = (
     }
   };
 
-  // Convert a value from gamma distribution to screen position
-  const gammaToScreen = (value: number, maxWidth: number): number => {
+  /**
+   * Converts a value from gamma distribution to screen position.
+   * @param value - The gamma distribution value to convert
+   * @param maxWidth - The maximum width of the screen
+   * @returns The mapped screen coordinate
+   */
+  const gammaToScreen = (value: number, maxWidth: number): number =>
     // Map gamma values to screen coordinates using a wider distribution
-    return Math.min(
+    Math.min(
       maxWidth * 0.98,
       maxWidth * 0.02 + (value / 2.5) * maxWidth * 0.95,
     );
+  /**
+   * Calculates tree ('t' letter) positions based on the selected distribution mode.
+   * @param seed - Random seed for deterministic pattern generation (default: 42)
+   * @returns Array of tree positions with formatting information
+   */
+  const calculateTreePositions = (seed: number = 42): TreePosition[] => {
+    const positions: TreePosition[] = [];
+    const [width, height] = [p.width, p.height];
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Use a deterministic pattern for t letters
+    p.randomSeed(seed);
+
+    for (let i = 0; i < state.letterDensity * 2.2; i++) {
+      let baseX, baseY;
+      let letterScale = 1.0;
+
+      // Generate positions based on selected distribution
+      if (state.distributionMode === 'gamma') {
+        const seed1 = i * 10;
+        const seed2 = i * 20 + 500;
+        const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8;
+        const gammaX = generateGammaRandom(
+          state.gammaShape * randomOffset,
+          state.gammaScale,
+        );
+        const gammaY = generateGammaRandom(
+          state.gammaShape * randomOffset,
+          state.gammaScale * 1.1,
+        );
+
+        const xNoiseFactor = p.noise(seed1 * 0.3, time * 0.03) * width * 0.9;
+        const yNoiseFactor = p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
+
+        baseX = gammaToScreen(gammaX, width) + xNoiseFactor;
+        baseY = gammaToScreen(gammaY, height) + yNoiseFactor;
+
+        // Environmental variability via Perlin noise
+        const envFactor = p.noise(baseX * 0.005, baseY * 0.005, i * 0.0001);
+
+        // Create clustering effect with attractors
+        const numAttractors = 5;
+        let attraction = 0;
+        let attractX = 0;
+        let attractY = 0;
+
+        for (let a = 0; a < numAttractors; a++) {
+          const attractorSeed1 = a * 1000;
+          const attractorSeed2 = a * 2000;
+          const aX = p.noise(attractorSeed1, time * 0.01) * width;
+          const aY = p.noise(attractorSeed2, time * 0.01) * height;
+          const dist = p.dist(baseX, baseY, aX, aY);
+          const influence = 1 / (1 + dist * 0.01);
+          attraction += influence;
+          attractX += aX * influence;
+          attractY += aY * influence;
+        }
+
+        if (attraction > 0) {
+          attractX /= attraction;
+          attractY /= attraction;
+          baseX = p.lerp(baseX, attractX, 0.3 * envFactor);
+          baseY = p.lerp(baseY, attractY, 0.3 * envFactor);
+        }
+
+        baseX += p.noise(seed1 * 0.5, time * 0.02) * width * 0.3 - width * 0.15;
+        baseY +=
+          p.noise(seed2 * 0.5, time * 0.02) * height * 0.3 - height * 0.15;
+
+        baseX = p.constrain(baseX, 5, width - 15);
+        baseY = p.constrain(baseY, 5, height - 15);
+
+        // Store gamma value for letter sizing
+        const gammaValue = p.noise(seed1 * 0.7) * 1.5;
+        letterScale = 0.8 + Math.min(gammaValue, 1.5) / 3;
+      } else if (state.distributionMode === 'gaussian') {
+        baseX = p.randomGaussian(centerX, width * 0.2);
+        baseY = p.randomGaussian(centerY, height * 0.2);
+      } else {
+        baseX = p.random(width);
+        baseY = p.random(height);
+      }
+
+      // Add wave motion + mouse influence
+      const swayX = Math.sin(time + baseY * 0.01) * state.swayAmount + xOffset;
+      const swayY =
+        Math.cos(time + baseX * 0.01) * (state.swayAmount / 2) + yOffset;
+
+      // Final position of the 't'
+      const finalX = baseX + swayX;
+      const finalY = baseY + swayY;
+
+      // Determine text size based on distribution
+      let fontSize = 18;
+      if (state.distributionMode === 'gamma') {
+        fontSize = Math.floor(18 * letterScale);
+      } else if (state.distributionMode === 'gaussian') {
+        fontSize = 18;
+      } else {
+        const sizeVar = p.noise(i * 0.5, 9999) * 0.4 + 0.8;
+        fontSize = 18 * sizeVar;
+      }
+
+      // Vary opacity based on distance
+      const dist = p.dist(baseX, baseY, centerX, centerY);
+      const normalizedDist = p.constrain(dist / Math.max(width, height), 0, 1);
+      const opacity = p.map(normalizedDist, 0, 0.5, 60, 20);
+
+      positions.push({
+        x: finalX,
+        y: finalY,
+        baseX,
+        baseY,
+        fontSize,
+        opacity,
+        letterScale,
+      });
+    }
+
+    return positions;
+  };
+
+  /**
+   * Draws the background 't' letters that represent trees in the forest.
+   * Uses the shared calculation function to determine positions.
+   */
+  const drawBackgroundLetters = () => {
+    p.push();
+    p.textSize(18);
+    p.fill(0, 0, 0, 30);
+
+    // Get all tree positions
+    const positions = calculateTreePositions();
+
+    // Draw each tree that hasn't been replaced
+    for (const pos of positions) {
+      // Check if this position has been replaced - use a more reliable comparison
+      const isReplaced = replacedPositions.some(
+        (rp) => p.dist(pos.baseX, pos.baseY, rp.x, rp.y) < 15, // Increased tolerance and using baseX/baseY
+      );
+
+      if (!isReplaced) {
+        p.fill(0, 0, 0, pos.opacity);
+        p.textSize(pos.fontSize);
+        p.text('t', pos.x, pos.y);
+      }
+    }
+
+    p.pop();
+  };
+
+  /**
+   * Draws replaced words and animating t's
+   */
+  const drawReplacedWords = (
+    p: P5ForestInstance,
+    replacedWords: ReplacedWord[],
+  ) => {
+    p.push();
+    const currentMillis = p.millis();
+
+    // Filter out expired words
+    const activeWords = replacedWords.filter(
+      (word) => currentMillis - word.animationStart <= WORD_DISPLAY_DURATION,
+    );
+
+    // Update the original array with only active words
+    replacedWords.length = 0;
+    replacedWords.push(...activeWords);
+
+    // Draw each active word
+    activeWords.forEach((rw) => {
+      // Calculate age of the replacement
+      const age = currentMillis - rw.animationStart;
+
+      // Calculate animation progress and opacity
+      const gatherProgress = Math.min(1, age / GATHER_ANIMATION_DURATION);
+      const easedProgress = 1 - Math.pow(1 - gatherProgress, 3); // Cubic easing out
+
+      // Calculate opacity based on age
+      let opacity = 255;
+      if (age > WORD_DISPLAY_DURATION - 1000) {
+        // Fade out in the last second
+        opacity = p.map(
+          age,
+          WORD_DISPLAY_DURATION - 1000,
+          WORD_DISPLAY_DURATION,
+          255,
+          0,
+        );
+      } else if (age < GATHER_ANIMATION_DURATION) {
+        // Fade in during gathering
+        opacity = p.map(age, 0, GATHER_ANIMATION_DURATION, 150, 255);
+      }
+
+      // Get the color for this word
+      const targetColor = FOREST_GREENS_ARRAY[rw.colorIndex];
+      const wordLetters = rw.word.split('');
+      const sourcePositions = rw.sourcePositions;
+
+      // Calculate word layout
+      const letterSpacing = 10;
+      const wordWidth = wordLetters.length * letterSpacing;
+      const startX = rw.x - wordWidth / 2;
+
+      // Draw each letter using zipWith-like functionality
+      const letterCount = Math.min(sourcePositions.length, wordLetters.length);
+      const letterIndices = Array.from({ length: letterCount }, (_, j) => j);
+
+      letterIndices.forEach((j) => {
+        const sourcePos = sourcePositions[j];
+        const targetX = startX + j * letterSpacing;
+        const targetY = rw.y;
+
+        // Interpolate position, color and opacity based on animation phase
+        if (gatherProgress < 1) {
+          // During gather animation
+          const x = p.lerp(sourcePos.x, targetX, easedProgress);
+          const y = p.lerp(sourcePos.y, targetY, easedProgress);
+
+          // Interpolate color from black to target color
+          const r = p.lerp(0, targetColor[0], easedProgress);
+          const g = p.lerp(0, targetColor[1], easedProgress);
+          const b = p.lerp(0, targetColor[2], easedProgress);
+
+          // Interpolate between 't' and actual letter with opacity
+          const letterOpacity = p.map(easedProgress, 0.5, 0.8, 0, opacity);
+          const tOpacity = p.map(easedProgress, 0.5, 0.8, opacity, 0);
+
+          // Draw the fading 't'
+          if (tOpacity > 0) {
+            p.fill(0, 0, 0, tOpacity);
+            p.textSize(18);
+            p.text('t', x, y);
+          }
+
+          // Draw the appearing letter
+          if (letterOpacity > 0) {
+            p.fill(r, g, b, letterOpacity);
+            p.textSize(18);
+            p.text(wordLetters[j], x, y);
+          }
+        } else {
+          // After animation is complete
+          const x = p.lerp(sourcePos.x, targetX, 1); // Use final position
+          const y = p.lerp(sourcePos.y, targetY, 1);
+
+          // Draw with final color
+          p.fill(targetColor[0], targetColor[1], targetColor[2], opacity);
+          p.textSize(18);
+          p.text(wordLetters[j], x, y);
+        }
+      });
+    });
+    p.pop();
+  };
+
+  /**
+   * Draws the title "fəɹəst"
+   */
+  const drawTitle = (p: P5ForestInstance) => {
+    p.push();
+    p.textSize(92);
+    p.fill(...KAHU_BLUE);
+    p.text(FOREST_TITLE, 40, 88);
+    p.pop();
+  };
+
+  /**
+   * Draws the poem text (left side)
+   */
+  const drawPoem = (p: P5ForestInstance) => {
+    p.push();
+    p.textSize(LETTER_SIZE);
+    p.fill(0);
+
+    const startY = p.height * 0.3;
+    const lineSpacing = LETTER_SIZE * 1.4;
+
+    POEM_LINES.forEach((line, index) => {
+      const yPosition = startY + index * lineSpacing;
+      p.text(line, 114, yPosition);
+    });
+
+    p.pop();
+  };
+
+  /**
+   * Draws the etymology text (right side)
+   */
+  const drawEtymology = (p: P5ForestInstance) => {
+    p.push();
+    p.textSize(LETTER_SIZE);
+    p.fill(...KAHU_BLUE);
+
+    const startY = -5; // off-screen
+    const lineSpacing = LETTER_SIZE * 1.21;
+
+    ETYMOLOGY_LINES.forEach((line, index) => {
+      const yPosition = Math.floor(startY + index * lineSpacing) + 0.5;
+      p.text(line, p.width - 280, yPosition);
+    });
+
+    p.pop();
   };
 
   p.preload = () => {
@@ -186,7 +436,6 @@ const sketch = (
     p.textFont(bodoniFont);
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
-
     // Improve text rendering quality
     p.pixelDensity(2);
   };
@@ -209,6 +458,31 @@ const sketch = (
     }
   };
 
+  /**
+   * Calculates the influence of mouse position and movement on the tree sway effect.
+   * @param mouseX - Current X position of the mouse
+   * @param mouseY - Current Y position of the mouse
+   * @param speed - Optional speed of mouse movement to create stronger effects when moving fast
+   */
+  const updateMouseInfluence = (
+    mouseX: number,
+    mouseY: number,
+    speed: number = 0,
+  ) => {
+    if (mouseX !== 0 && mouseY !== 0) {
+      // Calculate divisor based on speed - faster movement creates stronger effect
+      const divisor = 50 - speed * 0.1;
+
+      // Calculate target offsets with constraints
+      targetXOffset = (mouseX - p.width / 2) / divisor;
+      targetYOffset = (mouseY - p.height / 2) / divisor;
+
+      // Constrain values to prevent extreme movement
+      targetXOffset = p.constrain(targetXOffset, -30, 30);
+      targetYOffset = p.constrain(targetYOffset, -30, 30);
+    }
+  };
+
   p.draw = () => {
     p.background(255);
 
@@ -217,328 +491,23 @@ const sketch = (
     const deltaTime = Math.min(0.05, currentTime - lastFrameTime); // Cap to prevent jumps
     lastFrameTime = currentTime;
 
-    // Update time for animation - use delta time for consistent speed
-    time += deltaTime * 0.5; // Slow down the time increment
+    // Increment time using delta time for frame-rate independent animation.
+    // The multiplier (0.5) slows down the animation for a gentler effect.
+    time += deltaTime * 0.5;
 
     // Update offsets based on mouse position with smoother transitions
-    if (p.mouseX !== 0 && p.mouseY !== 0) {
-      // Calculate mouse influence
-      targetXOffset = (p.mouseX - p.width / 2) / 50;
-      targetYOffset = (p.mouseY - p.height / 2) / 50;
-    }
+    updateMouseInfluence(p.mouseX, p.mouseY);
 
     // Smoothly interpolate to target offsets with deltaTime
     const lerpFactor = 0.05 * (deltaTime * 20); // Adjust lerp factor based on frame rate
     xOffset = p.lerp(xOffset, targetXOffset, lerpFactor);
     yOffset = p.lerp(yOffset, targetYOffset, lerpFactor);
 
-    // Store t positions for click interaction
-    const tPositions: { x: number; y: number; size: number }[] = [];
-
-    // Draw the background letter 't' pattern (light but visible)
-    p.push();
-    p.textSize(18);
-    p.fill(0, 0, 0, 30); // Increased opacity to make them more visible
-
-    // Use a deterministic pattern for t letters with animation
-    p.randomSeed(42);
-
-    const [width, height] = [p.width, p.height];
-    const centerX = width / 2;
-    const centerY = height / 2;
-
-    for (let i = 0; i < state.letterDensity * 2.2; i++) {
-      let baseX, baseY;
-      let letterScale = 1.0; // Default scale factor
-
-      // Generate positions based on selected distribution
-      if (state.distributionMode === 'gamma') {
-        // Natural forest distribution based on gamma model
-
-        // Generate the base gamma values with slight randomization to create variety
-        // Use deterministic random values based on index to prevent stuttering
-        // Use fixed seed to prevent flashing
-        const seed1 = i * 10; // Fixed seed based on letter index
-        const seed2 = i * 20 + 500;
-        const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8; // 0.8 to 1.2 range
-        const gammaX = generateGammaRandom(
-          state.gammaShape * randomOffset,
-          state.gammaScale,
-        );
-        const gammaY = generateGammaRandom(
-          state.gammaShape * randomOffset,
-          state.gammaScale * 1.1,
-        );
-
-        // Apply larger random offsets that are stable across frames
-        // Use separate noise functions with different seeds for more variety
-        // These offsets help letters spread across the entire canvas
-        const xOffset = p.noise(seed1 * 0.3, time * 0.03) * width * 0.9;
-        const yOffset = p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
-
-        // Calculate base positions with wider spreading
-        baseX = gammaToScreen(gammaX, width) + xOffset;
-        baseY = gammaToScreen(gammaY, height) + yOffset;
-
-        // Replace artificial quadrant distribution with a more natural approach
-        // Natural forests show clustering based on environmental factors and seed dispersal
-        // without strict quadrant divisions
-
-        // Use Perlin noise to create natural environmental variability
-        const envFactor = p.noise(baseX * 0.005, baseY * 0.005, i * 0.0001);
-
-        // Create clustering effect with attractors at various natural points
-        // This is more realistic than quadrant-based distribution
-        const numAttractors = 5;
-        let attraction = 0;
-        let attractX = 0;
-        let attractY = 0;
-
-        // Create several attraction points with different strengths
-        for (let a = 0; a < numAttractors; a++) {
-          // Use stable seeds for consistent attractors
-          const attractorSeed1 = a * 1000;
-          const attractorSeed2 = a * 2000;
-
-          // Calculate attractor positions across the canvas using noise
-          // This creates natural-looking population centers
-          const aX = p.noise(attractorSeed1, time * 0.01) * width;
-          const aY = p.noise(attractorSeed2, time * 0.01) * height;
-
-          // Calculate distance influence with inverse square law (natural dispersion)
-          const dist = p.dist(baseX, baseY, aX, aY);
-          const influence = 1 / (1 + dist * 0.01);
-
-          // Accumulate attraction effects
-          attraction += influence;
-          attractX += aX * influence;
-          attractY += aY * influence;
-        }
-
-        // Normalize the attraction influence
-        if (attraction > 0) {
-          attractX /= attraction;
-          attractY /= attraction;
-
-          // Apply attraction with environmental variation
-          // Lower lerp value (0.3) makes the distribution more natural and less artificial
-          baseX = p.lerp(baseX, attractX, 0.3 * envFactor);
-          baseY = p.lerp(baseY, attractY, 0.3 * envFactor);
-        }
-
-        // Apply a slight noise offset for more organic distribution
-        baseX += p.noise(seed1 * 0.5, time * 0.02) * width * 0.3 - width * 0.15;
-        baseY +=
-          p.noise(seed2 * 0.5, time * 0.02) * height * 0.3 - height * 0.15;
-
-        // Ensure letters stay within canvas boundaries with a margin
-        baseX = p.constrain(baseX, 5, width - 15);
-        baseY = p.constrain(baseY, 5, height - 15);
-
-        // Store gamma value for letter sizing - this represents tree diameter
-        // Use a consistent formula to prevent size flashing
-        const gammaValue = p.noise(seed1 * 0.7) * 1.5; // Consistent value between 0 and 1.5
-
-        // Scale letter size based on gamma value (DBH simulation)
-        // Create a more subtle size variation that looks natural
-        letterScale = 0.8 + Math.min(gammaValue, 1.5) / 3; // Scale from 0.8 to 1.3 times normal size
-      } else if (state.distributionMode === 'gaussian') {
-        // Plantation forest (managed) distribution - more uniform
-        baseX = p.randomGaussian(centerX, width * 0.2);
-        baseY = p.randomGaussian(centerY, height * 0.2);
-      } else {
-        // Original random distribution
-        baseX = p.random(width);
-        baseY = p.random(height);
-      }
-
-      // Add wave motion + mouse influence with delta-time based animation
-      const swayX = Math.sin(time + baseY * 0.01) * state.swayAmount + xOffset;
-      const swayY =
-        Math.cos(time + baseX * 0.01) * (state.swayAmount / 2) + yOffset;
-
-      // Final position of the 't'
-      const finalX = baseX + swayX;
-      const finalY = baseY + swayY;
-
-      // Determine text size based on distribution
-      let fontSize = 18;
-      if (state.distributionMode === 'gamma') {
-        fontSize = Math.floor(18 * letterScale);
-      } else if (state.distributionMode === 'gaussian') {
-        fontSize = 18;
-      } else {
-        const sizeVar = p.noise(i * 0.5, 9999) * 0.4 + 0.8;
-        fontSize = 18 * sizeVar;
-      }
-
-      // Store positions for click interaction with their size
-      tPositions.push({ x: finalX, y: finalY, size: fontSize });
-
-      // Vary opacity based on "tree size" (gamma value) - making larger "trees" more visible
-      const dist = p.dist(baseX, baseY, centerX, centerY);
-      const normalizedDist = p.constrain(dist / Math.max(width, height), 0, 1);
-      const opacity = p.map(normalizedDist, 0, 0.5, 60, 20);
-
-      // Check if this position has been replaced
-      const isReplaced = replacedPositions.some(
-        (rp) => p.dist(finalX, finalY, rp.x, rp.y) < 5,
-      );
-
-      if (!isReplaced) {
-        p.fill(0, 0, 0, opacity);
-        p.textSize(fontSize);
-        p.text('t', finalX, finalY);
-      }
-    }
-    p.pop();
-
-    // Draw replaced words and animating t's
-    p.push();
-    const currentMillis = p.millis();
-    for (let i = replacedWords.length - 1; i >= 0; i--) {
-      const rw = replacedWords[i];
-      // Calculate age of the replacement and remove if too old
-      const age = currentMillis - rw.animationStart;
-
-      if (age > WORD_DISPLAY_DURATION) {
-        // Remove old words
-        replacedWords.splice(i, 1);
-        continue;
-      }
-
-      // Calculate animation progress for t gathering (0 to 1)
-      const gatherProgress = Math.min(1, age / GATHER_ANIMATION_DURATION);
-
-      // Calculate opacity based on age
-      let opacity = 255;
-      if (age > WORD_DISPLAY_DURATION - 1000) {
-        // Fade out in the last second
-        opacity = p.map(
-          age,
-          WORD_DISPLAY_DURATION - 1000,
-          WORD_DISPLAY_DURATION,
-          255,
-          0,
-        );
-      } else if (age < GATHER_ANIMATION_DURATION) {
-        // Fade in during gathering
-        opacity = p.map(age, 0, GATHER_ANIMATION_DURATION, 150, 255);
-      }
-
-      // Get the color for this word
-      const targetColor = FOREST_GREENS_ARRAY[rw.colorIndex];
-
-      // Calculate positions and draw letters
-      const sourcePositions = rw.sourcePositions;
-      const wordLetters = rw.word.split('');
-
-      // Only calculate letter distribution at the beginning for consistent animation
-      const letterSpacing = 10;
-      const wordWidth = wordLetters.length * letterSpacing;
-      const startX = rw.x - wordWidth / 2;
-
-      // If still in gathering animation phase, animate the transition
-      if (gatherProgress < 1) {
-        // During gather animation, draw each transitioning 't'
-        for (
-          let j = 0;
-          j < Math.min(sourcePositions.length, wordLetters.length);
-          j++
-        ) {
-          const sourcePos = sourcePositions[j];
-          const targetX = startX + j * letterSpacing;
-          const targetY = rw.y;
-
-          // Apply easing function for smoother animation
-          // Use cubic easing out for natural movement
-          const easedProgress = 1 - Math.pow(1 - gatherProgress, 3);
-
-          // Interpolate position
-          const x = p.lerp(sourcePos.x, targetX, easedProgress);
-          const y = p.lerp(sourcePos.y, targetY, easedProgress);
-
-          // Interpolate color from black to target color
-          const r = p.lerp(0, targetColor[0], easedProgress);
-          const g = p.lerp(0, targetColor[1], easedProgress);
-          const b = p.lerp(0, targetColor[2], easedProgress);
-
-          // Interpolate between 't' and actual letter
-          // We'll represent this by opacity fade-swap
-          const letterOpacity = p.map(easedProgress, 0.5, 0.8, 0, opacity);
-          const tOpacity = p.map(easedProgress, 0.5, 0.8, opacity, 0);
-
-          // Draw the fading 't'
-          if (tOpacity > 0) {
-            p.fill(0, 0, 0, tOpacity);
-            p.textSize(18);
-            p.text('t', x, y);
-          }
-
-          // Draw the appearing letter
-          if (letterOpacity > 0) {
-            p.fill(r, g, b, letterOpacity);
-            p.textSize(18);
-            p.text(wordLetters[j], x, y);
-          }
-        }
-      } else {
-        // After gathering is complete, maintain final positions instead of snapping to tight alignment
-        for (
-          let j = 0;
-          j < Math.min(sourcePositions.length, wordLetters.length);
-          j++
-        ) {
-          const sourcePos = sourcePositions[j];
-          const targetX = startX + j * letterSpacing;
-          const targetY = rw.y;
-
-          // Use final animation positions (100% of the easing progress)
-          // This preserves the last frame of the animation without snapping
-          const finalEasedProgress = 1; // 100% progress
-          const x = p.lerp(sourcePos.x, targetX, finalEasedProgress);
-          const y = p.lerp(sourcePos.y, targetY, finalEasedProgress);
-
-          // Draw with final color
-          p.fill(targetColor[0], targetColor[1], targetColor[2], opacity);
-          p.textSize(18);
-          p.text(wordLetters[j], x, y);
-        }
-      }
-    }
-    p.pop();
-
-    // Draw the title "fəɹəst"
-    p.push();
-    p.textSize(92);
-    p.fill(...KAHU_BLUE);
-    p.text(FOREST_TITLE, 40, 88);
-    p.pop();
-
-    // Draw the poem text (left side)
-    p.push();
-    p.textSize(letterSize);
-    p.fill(0);
-    const lines = POEM.split('\n');
-    let y = p.height * 0.3; // Exact positioning
-    for (let line of lines) {
-      p.text(line, 114, y);
-      y += letterSize * 1.4;
-    }
-    p.pop();
-
-    // Draw the etymology text (right side) - starting off-screen
-    p.push();
-    p.textSize(letterSize);
-    p.fill(...KAHU_BLUE);
-    const etymLines = ETYMOLOGY.split('\n');
-    y = -5; // off-screen
-
-    for (let line of etymLines) {
-      p.text(line, p.width - 280, Math.floor(y) + 0.5);
-      y += letterSize * 1.21;
-    }
-    p.pop();
+    drawBackgroundLetters();
+    drawReplacedWords(p, replacedWords);
+    drawTitle(p);
+    drawPoem(p);
+    drawEtymology(p);
   };
 
   p.windowResized = () => {
@@ -547,15 +516,11 @@ const sketch = (
   };
 
   p.mouseMoved = () => {
-    // Accelerate the movement based on mouse speed
+    // Calculate mouse movement speed and use it to accelerate the tree sway effect.
+    // Faster mouse movements create stronger effects.
     const mouseSpeed =
       p.abs(p.mouseX - p.pmouseX) + p.abs(p.mouseY - p.pmouseY);
-    targetXOffset = (p.mouseX - p.width / 2) / (50 - mouseSpeed * 0.1);
-    targetYOffset = (p.mouseY - p.height / 2) / (50 - mouseSpeed * 0.1);
-
-    // Constrain values to prevent extreme movement
-    targetXOffset = p.constrain(targetXOffset, -30, 30);
-    targetYOffset = p.constrain(targetYOffset, -30, 30);
+    updateMouseInfluence(p.mouseX, p.mouseY, mouseSpeed);
   };
 
   p.mouseClicked = () => {
@@ -575,107 +540,28 @@ const sketch = (
     // Find nearby t's
     const clickPos = { x: p.mouseX, y: p.mouseY };
 
-    // Find all t positions within the replace radius
-    const nearbyPositions = [];
-    const [width, height] = [p.width, p.height];
+    // Get all available t positions using the shared calculation function
+    const allPositions = calculateTreePositions();
 
-    // Use a deterministic pattern for t letters (same as in draw)
-    p.randomSeed(42);
+    // Filter to only positions that haven't been replaced yet
+    const availablePositions = allPositions
+      .filter(
+        (pos) =>
+          !replacedPositions.some(
+            (rp) => p.dist(pos.baseX, pos.baseY, rp.x, rp.y) < 15, // Use the base positions for comparison
+          ),
+      )
+      .map((pos) => ({
+        ...pos,
+        dist: p.dist(clickPos.x, clickPos.y, pos.x, pos.y),
+      }));
 
-    for (let i = 0; i < state.letterDensity * 2.2; i++) {
-      let baseX, baseY;
+    // Sort all positions by distance to click
+    availablePositions.sort((a, b) => a.dist - b.dist);
 
-      // Generate positions based on selected distribution (simplified version of draw code)
-      if (state.distributionMode === 'gamma') {
-        const seed1 = i * 10;
-        const seed2 = i * 20 + 500;
-        const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8;
-        const gammaX = generateGammaRandom(
-          state.gammaShape * randomOffset,
-          state.gammaScale,
-        );
-        const gammaY = generateGammaRandom(
-          state.gammaShape * randomOffset,
-          state.gammaScale * 1.1,
-        );
-
-        const xOffset = p.noise(seed1 * 0.3, time * 0.03) * width * 0.9;
-        const yOffset = p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
-
-        baseX = gammaToScreen(gammaX, width) + xOffset;
-        baseY = gammaToScreen(gammaY, height) + yOffset;
-
-        // Apply the same environmental factors as in draw
-        const envFactor = p.noise(baseX * 0.005, baseY * 0.005, i * 0.0001);
-        const numAttractors = 5;
-        let attraction = 0;
-        let attractX = 0;
-        let attractY = 0;
-
-        for (let a = 0; a < numAttractors; a++) {
-          const attractorSeed1 = a * 1000;
-          const attractorSeed2 = a * 2000;
-          const aX = p.noise(attractorSeed1, time * 0.01) * width;
-          const aY = p.noise(attractorSeed2, time * 0.01) * height;
-          const dist = p.dist(baseX, baseY, aX, aY);
-          const influence = 1 / (1 + dist * 0.01);
-          attraction += influence;
-          attractX += aX * influence;
-          attractY += aY * influence;
-        }
-
-        if (attraction > 0) {
-          attractX /= attraction;
-          attractY /= attraction;
-          baseX = p.lerp(baseX, attractX, 0.3 * envFactor);
-          baseY = p.lerp(baseY, attractY, 0.3 * envFactor);
-        }
-
-        baseX += p.noise(seed1 * 0.5, time * 0.02) * width * 0.3 - width * 0.15;
-        baseY +=
-          p.noise(seed2 * 0.5, time * 0.02) * height * 0.3 - height * 0.15;
-        baseX = p.constrain(baseX, 5, width - 15);
-        baseY = p.constrain(baseY, 5, height - 15);
-      } else if (state.distributionMode === 'gaussian') {
-        const centerX = width / 2;
-        const centerY = height / 2;
-        baseX = p.randomGaussian(centerX, width * 0.2);
-        baseY = p.randomGaussian(centerY, height * 0.2);
-      } else {
-        baseX = p.random(width);
-        baseY = p.random(height);
-      }
-
-      // Add wave motion + mouse influence
-      const swayX = Math.sin(time + baseY * 0.01) * state.swayAmount + xOffset;
-      const swayY =
-        Math.cos(time + baseX * 0.01) * (state.swayAmount / 2) + yOffset;
-
-      // Final position of the 't'
-      const finalX = baseX + swayX;
-      const finalY = baseY + swayY;
-
-      // Check if it's within radius and not already replaced
-      const dist = p.dist(clickPos.x, clickPos.y, finalX, finalY);
-      const notReplaced = !replacedPositions.some(
-        (rp) => p.dist(finalX, finalY, rp.x, rp.y) < 5,
-      );
-
-      if (dist < REPLACE_RADIUS && notReplaced) {
-        nearbyPositions.push({ x: finalX, y: finalY });
-      }
-    }
-
-    // Sort positions by distance to click
-    nearbyPositions.sort((a, b) => {
-      const distA = p.dist(clickPos.x, clickPos.y, a.x, a.y);
-      const distB = p.dist(clickPos.x, clickPos.y, b.x, b.y);
-      return distA - distB;
-    });
-
-    // Replace exactly as many t's as there are letters in the word
+    // Get the required number of positions for the word
     const letterCount = word.length;
-    const positionsToReplace = nearbyPositions.slice(0, letterCount);
+    const positionsToReplace = availablePositions.slice(0, letterCount);
 
     if (positionsToReplace.length > 0) {
       // Store the original positions of the t's for animation
@@ -684,19 +570,16 @@ const sketch = (
         y: pos.y,
       }));
 
-      // Add the word at the centroid of the replaced t's
-      let avgX = 0;
-      let avgY = 0;
+      // Calculate centroid (average position) of the selected positions
+      const centroid = calculateCentroid(positionsToReplace);
 
+      // Add positions to the replaced list
       for (const pos of positionsToReplace) {
-        avgX += pos.x;
-        avgY += pos.y;
-        // Add to replaced positions
-        replacedPositions.push(pos);
+        replacedPositions.push({
+          x: pos.baseX,
+          y: pos.baseY,
+        });
       }
-
-      avgX /= positionsToReplace.length;
-      avgY /= positionsToReplace.length;
 
       // Get the next color and increment the index
       const colorIndex = currentGreenIndex;
@@ -704,16 +587,34 @@ const sketch = (
 
       // Add the replacement word with source positions for animation
       replacedWords.push({
-        x: avgX,
-        y: avgY,
-        word: word,
+        ...centroid,
+        word,
         animationStart: p.millis(),
-        colorIndex: colorIndex,
-        sourcePositions: sourcePositions,
+        colorIndex,
+        sourcePositions,
       });
     }
 
     return false; // Prevent default behavior
+  };
+
+  /**
+   * Calculates the centroid (average position) of a set of points.
+   * @param positions - Array of positions to average
+   * @returns The centroid position with x and y coordinates
+   */
+  const calculateCentroid = (positions: Position2D[]): Position2D => {
+    if (positions.length === 0) return { x: 0, y: 0 };
+
+    const { sumX, sumY } = positions.reduce(
+      (acc, pos) => ({
+        sumX: acc.sumX + pos.x,
+        sumY: acc.sumY + pos.y,
+      }),
+      { sumX: 0, sumY: 0 },
+    );
+
+    return { x: sumX / positions.length, y: sumY / positions.length };
   };
 };
 
@@ -750,7 +651,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
       description:
         'Controls how many "t" letters appear on the canvas, similar to forest density.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={letterDensity}
             onChange={setLetterDensity}
@@ -758,13 +659,8 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
             max={1000}
             step={50}
           />
-          <button
-            onClick={() => setLetterDensity(400)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setLetterDensity(400)} />
+        </>
       ),
     },
     {
@@ -772,7 +668,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
       label: 'Wind Intensity',
       description: 'Controls how much the trees sway, like wind in a forest.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={swayAmount}
             onChange={setSwayAmount}
@@ -780,13 +676,8 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
             max={50}
             step={5}
           />
-          <button
-            onClick={() => setSwayAmount(10)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setSwayAmount(10)} />
+        </>
       ),
     },
     {
@@ -794,17 +685,15 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
       label: 'Forest Type',
       description: 'Select distribution pattern for different forest types.',
       control: (
-        <div className="flex items-center gap-2">
-          <select
-            value={distributionMode}
-            onChange={(e) => setDistributionMode(e.target.value)}
-            className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm"
-          >
-            <option value="random">Random (Scattered)</option>
-            <option value="gamma">Natural Forest (Gamma)</option>
-            <option value="gaussian">Plantation (Gaussian)</option>
-          </select>
-        </div>
+        <select
+          value={distributionMode}
+          onChange={(e) => setDistributionMode(e.target.value)}
+          className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm"
+        >
+          <option value="random">Random (Scattered)</option>
+          <option value="gamma">Natural Forest (Gamma)</option>
+          <option value="gaussian">Plantation (Gaussian)</option>
+        </select>
       ),
     },
     {
@@ -812,7 +701,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
       label: 'Age Structure',
       description: 'Controls tree diameter distribution shape (c parameter).',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={gammaShape}
             onChange={setGammaShape}
@@ -820,13 +709,8 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
             max={5}
             step={0.1}
           />
-          <button
-            onClick={() => setGammaShape(DEFAULT_GAMMA_SHAPE)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setGammaShape(DEFAULT_GAMMA_SHAPE)} />
+        </>
       ),
     },
     {
@@ -835,7 +719,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
       description:
         'Controls the scale of tree size distribution (b parameter).',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={gammaScale}
             onChange={setGammaScale}
@@ -843,13 +727,8 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
             max={0.1}
             step={0.001}
           />
-          <button
-            onClick={() => setGammaScale(DEFAULT_GAMMA_SCALE)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setGammaScale(DEFAULT_GAMMA_SCALE)} />
+        </>
       ),
     },
   ];

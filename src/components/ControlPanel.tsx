@@ -44,7 +44,9 @@ const ControlPanel = ({ controls, onReset }: ControlPanelProps) => {
                 <h4 className="font-medium text-gray-800 dark:text-gray-200">
                   {item.label}
                 </h4>
-                {item.id !== 'text' && <div>{item.control}</div>}
+                {item.id !== 'text' && (
+                  <div className="flex items-center gap-2">{item.control}</div>
+                )}
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {item.description}

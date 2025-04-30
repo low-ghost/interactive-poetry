@@ -1,4 +1,5 @@
 import ControlPanel from '@components/ControlPanel';
+import ResetButton from '@components/ResetButton';
 import SliderControl from '@components/SliderControl';
 import TextAreaControl from '@components/TextAreaControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
@@ -40,20 +41,28 @@ When in eternal lines to time thou grow'st.
 So long as men can breathe or eyes can see,
 So long lives this, and this gives life to thee.`;
 
-const sketch = (p: P5CanvasInstance) => {
+type SketchProps = {
+  background: boolean;
+  strength: number | null;
+  growthRate: number | null;
+  decayRate: number | null;
+  amplitude: number | null;
+  text: string | null;
+};
+
+const sketch = (p: P5CanvasInstance<SketchProps>) => {
   let cols: number;
   let rows: number;
   let chars: string[][];
   let ripples: Ripple[] = [];
 
-  const state = {
+  const state: SketchProps = {
     background: true,
-    strength: null as number | null,
-    growthRate: null as number | null,
-    decayRate: null as number | null,
-    amplitude: null as number | null,
+    strength: null,
+    growthRate: null,
+    decayRate: null,
+    amplitude: null,
     text: DEFAULT_SONNET,
-    isMobile: false,
   };
 
   const createRipple = (
@@ -168,7 +177,7 @@ const sketch = (p: P5CanvasInstance) => {
     chars = createCharacterGrid(rows, cols);
   };
 
-  p.updateWithProps = (props: any) => {
+  p.updateWithProps = (props: SketchProps) => {
     if (
       props.background !== undefined &&
       props.background !== state.background
@@ -200,6 +209,7 @@ const sketch = (p: P5CanvasInstance) => {
     p.createCanvas(canvasWidth, canvasHeight);
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(14);
+    p.pixelDensity(2);
     generateCharacterGrid(canvasWidth, canvasHeight);
   };
 
@@ -292,7 +302,7 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
       description:
         'Controls how powerfully ripples affect the text. Higher values create more dramatic displacements.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={strength}
             onChange={setStrength}
@@ -300,13 +310,8 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
             max={3.0}
             step={0.1}
           />
-          <button
-            onClick={() => setStrength(null)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setStrength(null)} />
+        </>
       ),
     },
     {
@@ -315,7 +320,7 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
       description:
         'Controls how quickly ripples expand. Higher values make ripples spread faster across the canvas.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={growthRate}
             onChange={setGrowthRate}
@@ -323,13 +328,8 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
             max={15}
             step={0.5}
           />
-          <button
-            onClick={() => setGrowthRate(null)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setGrowthRate(null)} />
+        </>
       ),
     },
     {
@@ -338,7 +338,7 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
       description:
         'Controls how quickly ripples fade. Higher values make ripples last longer before disappearing.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={decayRate}
             onChange={setDecayRate}
@@ -346,13 +346,8 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
             max={0.99}
             step={0.01}
           />
-          <button
-            onClick={() => setDecayRate(null)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setDecayRate(null)} />
+        </>
       ),
     },
     {
@@ -361,7 +356,7 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
       description:
         'Controls the height of the ripple waves. Higher values create more dramatic text displacement.',
       control: (
-        <div className="flex items-center gap-2">
+        <>
           <SliderControl
             value={amplitude}
             onChange={setAmplitude}
@@ -369,13 +364,8 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
             max={30}
             step={1}
           />
-          <button
-            onClick={() => setAmplitude(null)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-          >
-            Reset
-          </button>
-        </div>
+          <ResetButton onClick={() => setAmplitude(null)} />
+        </>
       ),
     },
     {
@@ -391,7 +381,6 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
         />
       ),
     },
-    // Future controls will be added here
   ];
 
   return (

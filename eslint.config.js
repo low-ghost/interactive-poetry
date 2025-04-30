@@ -25,6 +25,8 @@ export default tseslint.config(
       ],
       'func-style': ['error', 'expression'],
       'arrow-body-style': ['error', 'as-needed'],
+      'object-shorthand': ['error', 'always'],
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 );

@@ -2,15 +2,6 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from '@constants/canvas';
 import { P5CanvasInstance } from '@p5-wrapper/react';
 
 /**
- * Creates a random color, using 0-255 for each channel.
- *
- * @param p - The p5 instance.
- * @returns A random color.
- */
-export const createRandomColor = <T extends {}>(p: P5CanvasInstance<T>) =>
-  p.color(p.random(255), p.random(255), p.random(255));
-
-/**
  * Get the canvas size based on the window width if mobile, otherwise use the default canvas size.
  *
  * @param p - The p5 instance.
