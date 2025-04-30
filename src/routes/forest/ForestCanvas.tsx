@@ -16,11 +16,6 @@ import * as R from 'ramda';
 import { useState } from 'react';
 import { ETYMOLOGY_LINES, FOREST_TITLE, POEM_LINES, POEM_WORDS } from './poem';
 
-type ForestCanvasProps = {
-  /** Additional class names for the container. */
-  className?: string;
-};
-
 type TreePositionBase = {
   baseX: number;
   baseY: number;
@@ -43,13 +38,15 @@ const DEFAULT_GAMMA_SHAPE = 0.8; // Shape parameter c (from research)
 const DEFAULT_GAMMA_SCALE = 0.033; // Scale parameter b (from research)
 const LETTER_SIZE = 16;
 
-type P5ForestInstance = P5CanvasInstance<{
+type ForestControls = {
   letterDensity: number;
   swayAmount: number;
   distributionMode?: string;
   gammaShape?: number;
   gammaScale?: number;
-}>;
+};
+
+type P5ForestInstance = P5CanvasInstance<ForestControls>;
 
 const sketch = (p: P5ForestInstance) => {
   const state = {
@@ -86,17 +83,16 @@ const sketch = (p: P5ForestInstance) => {
 
   /**
    * Calculates tree ('t' letter) positions based on the selected distribution mode.
-   * @param seed - Random seed for deterministic pattern generation (default: 42)
    * @returns Array of tree positions with formatting information
    */
-  const calculateTreePositions = (seed: number = 42): TreePosition[] => {
-    const [width, height] = [p.width, p.height];
-    p.randomSeed(seed);
+  const calculateTreePositions = (): TreePosition[] => {
+    const [width, height] = getCanvasSize(p);
+    p.randomSeed(42);
 
     // Calculate position based on the distribution type
     const createGammaPosition = (i: number) => {
-      const seed1 = i * 10,
-        seed2 = i * 20 + 500;
+      const seed1 = i * 10;
+      const seed2 = i * 20 + 500;
       const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8;
 
       // Generate basic position from gamma distribution
@@ -259,13 +255,8 @@ const sketch = (p: P5ForestInstance) => {
     p.pop();
   };
 
-  /**
-   * Draws replaced words and animating t's
-   */
-  const drawReplacedWords = (
-    p: P5ForestInstance,
-    replacedWords: ReplacedWord[],
-  ) => {
+  /** Draws replaced words and animating t's */
+  const drawReplacedWords = (replacedWords: ReplacedWord[]) => {
     p.push();
     const currentMillis = p.millis();
 
@@ -349,51 +340,47 @@ const sketch = (p: P5ForestInstance) => {
     p.pop();
   };
 
-  // Consolidated draw function for text elements
-  const drawText = {
-    // Draws the title "fəɹəst"
-    title: (p: P5ForestInstance) => {
-      p.push();
-      p.textSize(92);
-      p.fill(...KAHU_BLUE);
-      p.text(FOREST_TITLE, 40, 88);
-      p.pop();
-    },
+  /** Draws the title "fəɹəst" */
+  const drawTitle = () => {
+    p.push();
+    p.textSize(92);
+    p.fill(...KAHU_BLUE);
+    p.text(FOREST_TITLE, 40, 88);
+    p.pop();
+  };
 
-    // Draws the poem text (left side)
-    poem: (p: P5ForestInstance) => {
-      p.push();
-      p.textSize(LETTER_SIZE);
-      p.fill(0);
-      const baseY = p.height * 0.3;
-      POEM_LINES.forEach((line, i) =>
-        p.text(line, 114, baseY + i * LETTER_SIZE * 1.4),
-      );
-      p.pop();
-    },
+  /** Draws the poem text (left side) */
+  const drawPoem = () => {
+    p.push();
+    p.textSize(LETTER_SIZE);
+    p.fill(0);
+    const baseY = p.height * 0.3;
+    POEM_LINES.forEach((line, i) =>
+      p.text(line, 114, baseY + i * LETTER_SIZE * 1.4),
+    );
+    p.pop();
+  };
 
-    // Draws the etymology text (right side)
-    etymology: (p: P5ForestInstance) => {
-      p.push();
-      p.textSize(LETTER_SIZE);
-      p.fill(...KAHU_BLUE);
-      ETYMOLOGY_LINES.forEach((line, i) =>
-        p.text(
-          line,
-          p.width - 280,
-          Math.floor(-5 + i * LETTER_SIZE * 1.21) + 0.5,
-        ),
-      );
-      p.pop();
-    },
+  /** Draws the etymology text (right side) */
+  const drawEtymology = () => {
+    p.push();
+    p.textSize(LETTER_SIZE);
+    p.fill(...KAHU_BLUE);
+    ETYMOLOGY_LINES.forEach((line, i) =>
+      p.text(
+        line,
+        p.width - 280,
+        Math.floor(-5 + i * LETTER_SIZE * 1.21) + 0.5,
+      ),
+    );
+    p.pop();
   };
 
   p.preload = () =>
     (bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf'));
 
   p.setup = () => {
-    const [width, height] = getCanvasSize(p);
-    p.createCanvas(width, height);
+    p.createCanvas(...getCanvasSize(p));
     p.textFont(bodoniFont);
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
@@ -401,7 +388,6 @@ const sketch = (p: P5ForestInstance) => {
   };
 
   p.updateWithProps = (props) => {
-    // Type-safe way to update state
     if (props.letterDensity !== undefined)
       state.letterDensity = props.letterDensity;
     if (props.swayAmount !== undefined) state.swayAmount = props.swayAmount;
@@ -420,8 +406,7 @@ const sketch = (p: P5ForestInstance) => {
     lastFrameTime = currentTime;
     time += deltaTime * 0.5;
 
-    // Update mouse influence
-    updateMouseInfluence(p.mouseX, p.mouseY);
+    updateMouseInfluence();
 
     // Apply smooth transitions to sway
     const lerpFactor = 0.05 * (deltaTime * 20);
@@ -430,22 +415,20 @@ const sketch = (p: P5ForestInstance) => {
 
     // Draw all elements
     drawBackgroundLetters();
-    drawReplacedWords(p, replacedWords);
-    drawText.title(p);
-    drawText.poem(p);
-    drawText.etymology(p);
+    drawReplacedWords(replacedWords);
+    drawTitle();
+    drawPoem();
+    drawEtymology();
   };
 
   p.windowResized = () => {
-    const [width, height] = getCanvasSize(p);
-    p.resizeCanvas(width, height);
+    p.resizeCanvas(...getCanvasSize(p));
   };
 
-  // Mouse event handlers
   p.mouseMoved = () => {
     const mouseSpeed =
       p.abs(p.mouseX - p.pmouseX) + p.abs(p.mouseY - p.pmouseY);
-    updateMouseInfluence(p.mouseX, p.mouseY, mouseSpeed);
+    updateMouseInfluence(mouseSpeed);
   };
 
   p.mouseClicked = () => {
@@ -516,22 +499,17 @@ const sketch = (p: P5ForestInstance) => {
 
   /**
    * Calculates the influence of mouse position and movement on the tree sway effect.
-   * @param mouseX - Current X position of the mouse
-   * @param mouseY - Current Y position of the mouse
-   * @param speed - Optional speed of mouse movement to create stronger effects when moving fast
+   * Accepts current x and y coordinates and optional speed of mouse movement
+   * to create stronger effects when moving fast
    */
-  const updateMouseInfluence = (
-    mouseX: number,
-    mouseY: number,
-    speed: number = 0,
-  ) => {
-    if (mouseX !== 0 && mouseY !== 0) {
+  const updateMouseInfluence = (speed: number = 0) => {
+    if (p.mouseX !== 0 && p.mouseY !== 0) {
       // Calculate divisor based on speed - faster movement creates stronger effect
       const divisor = 50 - speed * 0.1;
 
       // Calculate target offsets with constraints
-      targetXOffset = (mouseX - p.width / 2) / divisor;
-      targetYOffset = (mouseY - p.height / 2) / divisor;
+      targetXOffset = (p.mouseX - p.width / 2) / divisor;
+      targetYOffset = (p.mouseY - p.height / 2) / divisor;
 
       // Constrain values to prevent extreme movement
       targetXOffset = p.constrain(targetXOffset, -30, 30);
@@ -540,21 +518,9 @@ const sketch = (p: P5ForestInstance) => {
   };
 };
 
-/**
- * ForestCanvas is a component that renders a typographic forest visualization.
- */
-const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
-  // Define control state type
-  type ControlState = {
-    letterDensity: number;
-    swayAmount: number;
-    distributionMode: string;
-    gammaShape: number;
-    gammaScale: number;
-  };
-
-  // Combined state object for all controls
-  const [controls, setControls] = useState<ControlState>({
+/** ForestCanvas is a component that renders a typographic forest visualization. */
+const ForestCanvas = () => {
+  const [controls, setControls] = useState<ForestControls>({
     letterDensity: DEFAULT_LETTER_DENSITY,
     swayAmount: DEFAULT_SWAY_AMOUNT,
     distributionMode: DISTRIBUTION_MODE,
@@ -564,7 +530,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
   const [showFormula, setShowFormula] = useState<boolean>(false);
 
   // Update a single control value
-  const updateControl = (key: keyof ControlState) => (value: number) =>
+  const updateControl = (key: keyof ForestControls) => (value: number) =>
     setControls((prev) => ({ ...prev, [key]: value }));
 
   // Reset all controls to defaults
@@ -579,7 +545,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
 
   // Create a slider control with reset button
   const createSliderControl = (
-    key: keyof ControlState,
+    key: keyof ForestControls,
     min: number,
     max: number,
     step: number,
@@ -690,15 +656,8 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
     },
   ];
 
-  // Add CSS for citation text
-  const citationTextStyle = {
-    wordWrap: 'break-word' as const,
-    overflowWrap: 'break-word' as const,
-    hyphens: 'auto' as const,
-  };
-
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className="flex flex-col">
       <div className="mb-4 w-full">
         <ControlPanel controls={controlConfig} onReset={handleReset} />
 
@@ -727,14 +686,14 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
 
               <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <strong>c = {controls.gammaShape.toFixed(1)}</strong> (shape
+                  <strong>c = {controls.gammaShape?.toFixed(1)}</strong> (shape
                   parameter)
                   <div className="text-xs text-gray-600 dark:text-gray-400">
                     Controls the age-size structure distribution
                   </div>
                 </div>
                 <div>
-                  <strong>b = {controls.gammaScale.toFixed(3)}</strong> (scale
+                  <strong>b = {controls.gammaScale?.toFixed(3)}</strong> (scale
                   parameter)
                   <div className="text-xs text-gray-600 dark:text-gray-400">
                     Controls distribution spread
@@ -755,8 +714,7 @@ const ForestCanvas = ({ className = '' }: ForestCanvasProps) => {
                   <li key={i}>
                     <a
                       href={source.href}
-                      className="text-blue-600 hover:underline citation-text"
-                      style={citationTextStyle}
+                      className="text-blue-600 hover:underline break-words hyphens-auto"
                     >
                       {source.text}
                     </a>
