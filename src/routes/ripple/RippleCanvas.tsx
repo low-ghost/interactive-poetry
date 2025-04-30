@@ -3,7 +3,8 @@ import SliderControl from '@components/SliderControl';
 import TextAreaControl from '@components/TextAreaControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { ControlItem } from '@type/controls';
-import { createRandomColor, getCanvasSize } from '@utils/canvas';
+import { getCanvasSize } from '@utils/canvas';
+import { createRandomColor } from '@utils/color';
 import { Color } from 'p5';
 import { useState } from 'react';
 

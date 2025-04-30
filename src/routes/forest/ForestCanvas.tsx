@@ -3,6 +3,7 @@ import SliderControl from '@components/SliderControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { ControlItem } from '@type/controls';
 import { getCanvasSize } from '@utils/canvas';
+import { FOREST_GREENS_ARRAY, KAHU_BLUE } from '@utils/color';
 import p5 from 'p5';
 import { useState } from 'react';
 
@@ -44,6 +45,8 @@ branches
 find me
 where
 I look`;
+
+const POEM_WORDS = POEM.split(/\s+/).filter((word) => word.trim().length > 0);
 
 const ETYMOLOGY = `From Middle
 English forest,
@@ -105,14 +108,15 @@ const sketch = (
   }>,
 ) => {
   const letterSize = 16;
-  let letterDensity = 400;
+  const state = {
+    letterDensity: DEFAULT_LETTER_DENSITY,
+    swayAmount: DEFAULT_SWAY_AMOUNT,
+    distributionMode: DISTRIBUTION_MODE,
+    gammaShape: DEFAULT_GAMMA_SHAPE,
+    gammaScale: DEFAULT_GAMMA_SCALE,
+  };
   let bodoniFont: p5.Font;
-  let distributionMode = DISTRIBUTION_MODE;
-  let gammaShape = DEFAULT_GAMMA_SHAPE;
-  let gammaScale = DEFAULT_GAMMA_SCALE;
 
-  // Poem word replacement
-  let poemWords: string[] = [];
   let currentWordIndex = 0;
   const replacedWords: {
     x: number;
@@ -129,7 +133,6 @@ const sketch = (
   const replacedPositions: { x: number; y: number }[] = [];
 
   // Sway variables
-  let swayAmount = 0;
   let time = 0;
   let xOffset = 0;
   let yOffset = 0;
@@ -137,17 +140,6 @@ const sketch = (
   let targetYOffset = 0;
   let lastFrameTime = 0; // To calculate delta time for smoother animation
 
-  // Different shades of green for the forest
-  const FOREST_GREENS = [
-    [34, 139, 34], // Forest Green
-    [0, 100, 0], // Dark Green
-    [85, 107, 47], // Dark Olive Green
-    [107, 142, 35], // Olive Drab
-    [60, 179, 113], // Medium Sea Green
-    [46, 139, 87], // Sea Green
-    [32, 178, 170], // Light Sea Green
-    [0, 128, 0], // Green
-  ];
   let currentGreenIndex = 0;
 
   // Generate a gamma-distributed random value
@@ -176,20 +168,11 @@ const sketch = (
   };
 
   // Convert a value from gamma distribution to screen position
-  const gammaToScreenX = (value: number, maxWidth: number): number => {
+  const gammaToScreen = (value: number, maxWidth: number): number => {
     // Map gamma values to screen coordinates using a wider distribution
     return Math.min(
       maxWidth * 0.98,
       maxWidth * 0.02 + (value / 2.5) * maxWidth * 0.95,
-    );
-  };
-
-  // Convert a value from gamma distribution to screen position (Y)
-  const gammaToScreenY = (value: number, maxHeight: number): number => {
-    // Similar mapping for Y coordinates with wider distribution
-    return Math.min(
-      maxHeight * 0.98,
-      maxHeight * 0.02 + (value / 2.5) * maxHeight * 0.95,
     );
   };
 
@@ -206,26 +189,23 @@ const sketch = (
 
     // Improve text rendering quality
     p.pixelDensity(2);
-
-    // Initialize poem words array by splitting the poem text
-    poemWords = POEM.split(/\s+/).filter((word) => word.trim().length > 0);
   };
 
   p.updateWithProps = (props) => {
     if (props.letterDensity !== undefined) {
-      letterDensity = props.letterDensity;
+      state.letterDensity = props.letterDensity;
     }
     if (props.swayAmount !== undefined) {
-      swayAmount = props.swayAmount;
+      state.swayAmount = props.swayAmount;
     }
     if (props.distributionMode !== undefined) {
-      distributionMode = props.distributionMode;
+      state.distributionMode = props.distributionMode;
     }
     if (props.gammaShape !== undefined) {
-      gammaShape = props.gammaShape;
+      state.gammaShape = props.gammaShape;
     }
     if (props.gammaScale !== undefined) {
-      gammaScale = props.gammaScale;
+      state.gammaScale = props.gammaScale;
     }
   };
 
@@ -267,12 +247,12 @@ const sketch = (
     const centerX = width / 2;
     const centerY = height / 2;
 
-    for (let i = 0; i < letterDensity * 2.2; i++) {
+    for (let i = 0; i < state.letterDensity * 2.2; i++) {
       let baseX, baseY;
       let letterScale = 1.0; // Default scale factor
 
       // Generate positions based on selected distribution
-      if (distributionMode === 'gamma') {
+      if (state.distributionMode === 'gamma') {
         // Natural forest distribution based on gamma model
 
         // Generate the base gamma values with slight randomization to create variety
@@ -282,12 +262,12 @@ const sketch = (
         const seed2 = i * 20 + 500;
         const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8; // 0.8 to 1.2 range
         const gammaX = generateGammaRandom(
-          gammaShape * randomOffset,
-          gammaScale,
+          state.gammaShape * randomOffset,
+          state.gammaScale,
         );
         const gammaY = generateGammaRandom(
-          gammaShape * randomOffset,
-          gammaScale * 1.1,
+          state.gammaShape * randomOffset,
+          state.gammaScale * 1.1,
         );
 
         // Apply larger random offsets that are stable across frames
@@ -297,8 +277,8 @@ const sketch = (
         const yOffset = p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
 
         // Calculate base positions with wider spreading
-        baseX = gammaToScreenX(gammaX, width) + xOffset;
-        baseY = gammaToScreenY(gammaY, height) + yOffset;
+        baseX = gammaToScreen(gammaX, width) + xOffset;
+        baseY = gammaToScreen(gammaY, height) + yOffset;
 
         // Replace artificial quadrant distribution with a more natural approach
         // Natural forests show clustering based on environmental factors and seed dispersal
@@ -362,7 +342,7 @@ const sketch = (
         // Scale letter size based on gamma value (DBH simulation)
         // Create a more subtle size variation that looks natural
         letterScale = 0.8 + Math.min(gammaValue, 1.5) / 3; // Scale from 0.8 to 1.3 times normal size
-      } else if (distributionMode === 'gaussian') {
+      } else if (state.distributionMode === 'gaussian') {
         // Plantation forest (managed) distribution - more uniform
         baseX = p.randomGaussian(centerX, width * 0.2);
         baseY = p.randomGaussian(centerY, height * 0.2);
@@ -373,8 +353,9 @@ const sketch = (
       }
 
       // Add wave motion + mouse influence with delta-time based animation
-      const swayX = Math.sin(time + baseY * 0.01) * swayAmount + xOffset;
-      const swayY = Math.cos(time + baseX * 0.01) * (swayAmount / 2) + yOffset;
+      const swayX = Math.sin(time + baseY * 0.01) * state.swayAmount + xOffset;
+      const swayY =
+        Math.cos(time + baseX * 0.01) * (state.swayAmount / 2) + yOffset;
 
       // Final position of the 't'
       const finalX = baseX + swayX;
@@ -382,9 +363,9 @@ const sketch = (
 
       // Determine text size based on distribution
       let fontSize = 18;
-      if (distributionMode === 'gamma') {
+      if (state.distributionMode === 'gamma') {
         fontSize = Math.floor(18 * letterScale);
-      } else if (distributionMode === 'gaussian') {
+      } else if (state.distributionMode === 'gaussian') {
         fontSize = 18;
       } else {
         const sizeVar = p.noise(i * 0.5, 9999) * 0.4 + 0.8;
@@ -446,7 +427,7 @@ const sketch = (
       }
 
       // Get the color for this word
-      const targetColor = FOREST_GREENS[rw.colorIndex];
+      const targetColor = FOREST_GREENS_ARRAY[rw.colorIndex];
 
       // Calculate positions and draw letters
       const sourcePositions = rw.sourcePositions;
@@ -530,7 +511,7 @@ const sketch = (
     // Draw the title "fəɹəst"
     p.push();
     p.textSize(92);
-    p.fill(0, 149, 218); // light blue
+    p.fill(...KAHU_BLUE);
     p.text(FOREST_TITLE, 40, 88);
     p.pop();
 
@@ -549,7 +530,7 @@ const sketch = (
     // Draw the etymology text (right side) - starting off-screen
     p.push();
     p.textSize(letterSize);
-    p.fill(0, 149, 218); // Match title color
+    p.fill(...KAHU_BLUE);
     const etymLines = ETYMOLOGY.split('\n');
     y = -5; // off-screen
 
@@ -588,11 +569,8 @@ const sketch = (
       return;
     }
 
-    // Get the next word from the poem
-    if (poemWords.length === 0) return;
-
-    const word = poemWords[currentWordIndex];
-    currentWordIndex = (currentWordIndex + 1) % poemWords.length;
+    const word = POEM_WORDS[currentWordIndex];
+    currentWordIndex = (currentWordIndex + 1) % POEM_WORDS.length;
 
     // Find nearby t's
     const clickPos = { x: p.mouseX, y: p.mouseY };
@@ -604,29 +582,28 @@ const sketch = (
     // Use a deterministic pattern for t letters (same as in draw)
     p.randomSeed(42);
 
-    for (let i = 0; i < letterDensity * 2.2; i++) {
+    for (let i = 0; i < state.letterDensity * 2.2; i++) {
       let baseX, baseY;
-      let letterScale = 1.0; // Default scale factor
 
       // Generate positions based on selected distribution (simplified version of draw code)
-      if (distributionMode === 'gamma') {
+      if (state.distributionMode === 'gamma') {
         const seed1 = i * 10;
         const seed2 = i * 20 + 500;
         const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8;
         const gammaX = generateGammaRandom(
-          gammaShape * randomOffset,
-          gammaScale,
+          state.gammaShape * randomOffset,
+          state.gammaScale,
         );
         const gammaY = generateGammaRandom(
-          gammaShape * randomOffset,
-          gammaScale * 1.1,
+          state.gammaShape * randomOffset,
+          state.gammaScale * 1.1,
         );
 
         const xOffset = p.noise(seed1 * 0.3, time * 0.03) * width * 0.9;
         const yOffset = p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
 
-        baseX = gammaToScreenX(gammaX, width) + xOffset;
-        baseY = gammaToScreenY(gammaY, height) + yOffset;
+        baseX = gammaToScreen(gammaX, width) + xOffset;
+        baseY = gammaToScreen(gammaY, height) + yOffset;
 
         // Apply the same environmental factors as in draw
         const envFactor = p.noise(baseX * 0.005, baseY * 0.005, i * 0.0001);
@@ -659,7 +636,7 @@ const sketch = (
           p.noise(seed2 * 0.5, time * 0.02) * height * 0.3 - height * 0.15;
         baseX = p.constrain(baseX, 5, width - 15);
         baseY = p.constrain(baseY, 5, height - 15);
-      } else if (distributionMode === 'gaussian') {
+      } else if (state.distributionMode === 'gaussian') {
         const centerX = width / 2;
         const centerY = height / 2;
         baseX = p.randomGaussian(centerX, width * 0.2);
@@ -670,8 +647,9 @@ const sketch = (
       }
 
       // Add wave motion + mouse influence
-      const swayX = Math.sin(time + baseY * 0.01) * swayAmount + xOffset;
-      const swayY = Math.cos(time + baseX * 0.01) * (swayAmount / 2) + yOffset;
+      const swayX = Math.sin(time + baseY * 0.01) * state.swayAmount + xOffset;
+      const swayY =
+        Math.cos(time + baseX * 0.01) * (state.swayAmount / 2) + yOffset;
 
       // Final position of the 't'
       const finalX = baseX + swayX;
@@ -722,7 +700,7 @@ const sketch = (
 
       // Get the next color and increment the index
       const colorIndex = currentGreenIndex;
-      currentGreenIndex = (currentGreenIndex + 1) % FOREST_GREENS.length;
+      currentGreenIndex = (currentGreenIndex + 1) % FOREST_GREENS_ARRAY.length;
 
       // Add the replacement word with source positions for animation
       replacedWords.push({
