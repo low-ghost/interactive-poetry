@@ -662,12 +662,14 @@ const ForestCanvas = () => {
         <ControlPanel controls={controlConfig} onReset={handleReset} />
 
         <div className="mt-3 ml-2">
-          <button
-            onClick={() => setShowFormula(!showFormula)}
-            className="text-sm underline text-blue-600 hover:text-blue-800"
-          >
-            {showFormula ? 'Hide Scientific Model' : 'Show Scientific Model'}
-          </button>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowFormula(!showFormula)}
+              className="text-sm underline text-blue-600 hover:text-blue-800"
+            >
+              {showFormula ? 'Hide Scientific Model' : 'Show Scientific Model'}
+            </button>
+          </div>
 
           {showFormula && (
             <div className="mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm">

@@ -7,6 +7,7 @@ const RipplePage = () => (
   <CanvasLayout
     title="P5.js Ripple Effect"
     description="Interact with the canvas to create ripple effects. Click to create a color burst."
+    githubLink="routes/ripple/RippleCanvas.tsx"
   >
     <Suspense
       fallback={

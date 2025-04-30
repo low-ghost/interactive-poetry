@@ -4,30 +4,32 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  GalleryIcon,
+  ForestIcon,
   HomeIcon,
+  RippleIcon,
+  SimpleDemoIcon,
 } from './icons';
 
 const navigationConfig = [
   {
     path: AppRoutes.HOME,
     label: 'Home',
-    icon: <HomeIcon />,
+    icon: <HomeIcon size={24} />,
   },
   {
     path: AppRoutes.SIMPLE_DEMO,
     label: 'Simple Demo',
-    icon: <GalleryIcon />,
+    icon: <SimpleDemoIcon size={24} />,
   },
   {
     path: AppRoutes.RIPPLE,
     label: 'Ripple Effect',
-    icon: <GalleryIcon />,
+    icon: <RippleIcon size={24} />,
   },
   {
     path: AppRoutes.FOREST,
     label: 'Forest',
-    icon: <GalleryIcon />,
+    icon: <ForestIcon size={24} />,
   },
 ];
 
@@ -81,7 +83,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                 className="p-2 rounded-md text-white hover:bg-gray-700"
                 aria-label="Close navigation"
               >
-                <ChevronLeftIcon />
+                <ChevronLeftIcon size={24} />
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto p-4">
@@ -118,7 +120,11 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
               className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700"
               aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
-              {sidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+              {sidebarOpen ? (
+                <ChevronLeftIcon size={24} />
+              ) : (
+                <ChevronRightIcon size={24} />
+              )}
             </button>
           </div>
           <nav className="flex-1 overflow-y-auto p-4">
