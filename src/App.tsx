@@ -1,12 +1,12 @@
 import {
   Route,
   RouterProvider,
-  createBrowserRouter,
+  createHashRouter,
   createRoutesFromElements,
 } from 'react-router-dom';
 import RootLayout from './layouts/RootLayout';
 
-const router = createBrowserRouter(
+const router = createHashRouter(
   createRoutesFromElements(
     <>
       <Route path="/" element={<RootLayout />}>
@@ -44,9 +44,6 @@ const router = createBrowserRouter(
       />
     </>,
   ),
-  {
-    basename: import.meta.env.BASE_URL,
-  },
 );
 
 const App = () => <RouterProvider router={router} />;

@@ -2,7 +2,7 @@ import ControlPanel from '@components/ControlPanel';
 import ResetButton from '@components/ResetButton';
 import SliderControl from '@components/SliderControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
-import { getCanvasSize, PIXEL_DENSITY } from '@utils/canvas';
+import { getCanvasSize, improveTextRendering } from '@utils/canvas';
 import { FOREST_GREENS_ARRAY, KAHU_BLUE } from '@utils/color';
 import {
   calculateCentroid,
@@ -340,25 +340,36 @@ const sketch = (p: P5ForestInstance) => {
     p.pop();
   };
 
-  /** Draws the title "fəɹəst" */
+  /** Draws the title "forest" in IPA notation */
   const drawTitle = () => {
     p.push();
-    p.textSize(92);
+    // Adjust title size based on screen width
+    const titleSize = p.width < 500 ? 72 : 92;
+    p.textSize(titleSize);
     p.fill(...KAHU_BLUE);
     p.noStroke();
-    p.text(FOREST_TITLE, 40, 88);
+    // Adjust position for smaller screens
+    const titleX = p.width < 500 ? 20 : 40;
+    p.text(FOREST_TITLE, titleX, 88);
     p.pop();
   };
 
   /** Draws the poem text (left side) */
   const drawPoem = () => {
     p.push();
-    p.textSize(LETTER_SIZE);
+    // Adjust text size based on screen width
+    const fontSize =
+      p.width < 500 ? Math.max(LETTER_SIZE - 2, 12) : LETTER_SIZE;
+    p.textSize(fontSize);
     p.fill(0);
     p.noStroke();
     const baseY = p.height * 0.3;
+
+    // Calculate left margin based on canvas width
+    const leftMargin = p.width < 500 ? 20 : 114;
+
     POEM_LINES.forEach((line, i) =>
-      p.text(line, 114, baseY + i * LETTER_SIZE * 1.4),
+      p.text(line, leftMargin, baseY + i * fontSize * 1.4),
     );
     p.pop();
   };
@@ -366,45 +377,41 @@ const sketch = (p: P5ForestInstance) => {
   /** Draws the etymology text (right side) */
   const drawEtymology = () => {
     p.push();
-    p.textSize(LETTER_SIZE);
+    // Adjust text size based on screen width
+    const fontSize =
+      p.width < 500 ? Math.max(LETTER_SIZE - 2, 12) : LETTER_SIZE;
+    p.textSize(fontSize);
     p.fill(...KAHU_BLUE);
+
+    // Calculate right position based on canvas width
+    // Ensure minimum separation between poem and etymology
+    const rightPosition =
+      p.width < 500 ? Math.max(p.width - 160, 170) : p.width - 280;
+
+    // Calculate line height based on canvas height to stretch etymology
+    // across the full height plus a bit more to go off-screen
+    const totalLines = ETYMOLOGY_LINES.length;
+    const lineHeight = (p.height * 1.02) / totalLines;
+
+    // Start position slightly above the top of the canvas
+    const startY = -p.height * 0.01;
+
     ETYMOLOGY_LINES.forEach((line, i) =>
-      p.text(
-        line,
-        p.width - 280,
-        Math.floor(-5 + i * LETTER_SIZE * 1.21) + 0.5,
-      ),
+      p.text(line, rightPosition, startY + i * lineHeight),
     );
     p.pop();
   };
 
-  p.preload = () =>
-    (bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf'));
+  p.preload = () => {
+    bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf');
+  };
 
   p.setup = () => {
     p.createCanvas(...getCanvasSize(p));
     p.textFont(bodoniFont);
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
-
-    // Set pixel density directly
-    p.pixelDensity(PIXEL_DENSITY);
-
-    // Disable stroke on text for crisper edges
-    p.noStroke();
-
-    // Set higher quality for text rendering
-    if (p.drawingContext) {
-      try {
-        // Attempt to set canvas context properties for better text
-        const ctx = p.drawingContext as CanvasRenderingContext2D;
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        (ctx as any).textRendering = 'geometricPrecision';
-      } catch (e) {
-        // Ignore errors if properties are not supported
-      }
-    }
+    improveTextRendering(p);
   };
 
   p.updateWithProps = (props) => {

@@ -1,5 +1,5 @@
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
-import { getCanvasSize, PIXEL_DENSITY } from '@utils/canvas';
+import { getCanvasSize } from '@utils/canvas';
 import { useState } from 'react';
 
 type SimpleDemoCanvasProps = {
@@ -11,28 +11,12 @@ const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
   let cursorColor = 100;
 
   p.setup = () => {
-    const [width, height] = getCanvasSize(p);
-    p.createCanvas(width, height);
+    p.createCanvas(...getCanvasSize(p));
     p.background(100);
-
-    // Set pixel density directly
-    p.pixelDensity(PIXEL_DENSITY);
-
-    // Apply rendering optimizations
-    if (p.drawingContext) {
-      try {
-        const ctx = p.drawingContext as CanvasRenderingContext2D;
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-      } catch (e) {
-        // Ignore errors if properties are not supported
-      }
-    }
   };
 
   p.windowResized = () => {
-    const [width, height] = getCanvasSize(p);
-    p.resizeCanvas(width, height);
+    p.resizeCanvas(...getCanvasSize(p));
     p.background(100);
   };
 
@@ -56,7 +40,7 @@ const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
 };
 
 /**
- * SimpleDemoCanvas is a component that renders a simple P5.js simple demo.
+ * SimpleDemoCanvas is a component that renders a simple P5.js demo.
  *
  * @returns A P5.js canvas inside a div.
  */

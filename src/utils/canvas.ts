@@ -19,4 +19,29 @@ export const getCanvasSize = <T extends {}>(
 /**
  * Pixel density value used across the application
  */
-export const PIXEL_DENSITY = 2;
+const PIXEL_DENSITY = 2;
+
+/**
+ * Improve text rendering for the canvas by setting the pixel density,
+ * removing the stroke, and setting the text rendering to geometric precision.
+ *
+ * @param p - The p5 instance.
+ */
+export const improveTextRendering = <T extends {}>(p: P5CanvasInstance<T>) => {
+  p.pixelDensity(PIXEL_DENSITY);
+  p.noStroke();
+
+  // Set higher quality for text rendering
+  if (p.drawingContext) {
+    try {
+      // Attempt to set canvas context properties for better text
+      const ctx = p.drawingContext as CanvasRenderingContext2D;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.textRendering = 'geometricPrecision';
+    } catch (e) {
+      // Ignore errors if properties are not supported
+      console.error('Error setting canvas context properties:', e);
+    }
+  }
+};
