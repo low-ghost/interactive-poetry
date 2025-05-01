@@ -22,3 +22,173 @@ html.dark body {
   background-color: #111827;
   color: #f9fafb;
 }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  position: relative;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  scroll-behavior: smooth;
+}
+
+/* Fullscreen canvas styling */
+.fullscreen-container:fullscreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  padding: 0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  /* Remove any borders */
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-rendering: geometricPrecision !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.dark .fullscreen-container:fullscreen {
+  background-color: #1a202c;
+}
+
+/* Wrapper around the canvas when in fullscreen */
+.fullscreen-container:fullscreen > div {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Remove padding that might be present */
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Base canvas container when in fullscreen */
+.fullscreen-container:fullscreen canvas.p5Canvas {
+  display: block !important;
+  margin: 0 auto;
+  object-fit: contain;
+  /* Default size strategy for desktop */
+  max-width: 100vw;
+  max-height: 100vh;
+  /* Preserve aspect ratio */
+  width: auto !important;
+  height: auto !important;
+  /* Ensure canvas is above other elements */
+  z-index: 10;
+  position: relative;
+  /* Remove any borders or padding */
+  border: none !important;
+  padding: 0 !important;
+  image-rendering: -webkit-optimize-contrast !important;
+  image-rendering: crisp-edges !important;
+}
+
+/* Fullscreen container div sizing and layout */
+.fullscreen-container:fullscreen > div > div:nth-child(2) {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  /* Remove any borders or padding */
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Hide controls in fullscreen */
+.fullscreen-container:fullscreen > div > div:first-child {
+  display: none;
+}
+
+/* Also hide the fullscreen button itself when in fullscreen mode */
+.fullscreen-container:fullscreen > div > div:last-child {
+  display: none;
+}
+
+/* Make the exit button visible in fullscreen */
+.fullscreen-exit-button {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 999; /* Very high z-index to ensure it's on top */
+  background-color: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+  padding: 0.5rem;
+  display: flex !important; /* Ensure the button is always visible */
+  color: white !important;
+  border: none !important;
+}
+
+/* For dark mode */
+.dark .fullscreen-exit-button {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Mobile specific fullscreen adjustments */
+@media (max-width: 768px) {
+  /* Ensure the canvas is clearly positioned and visible */
+  .fullscreen-container:fullscreen canvas.p5Canvas {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 10;
+    /* Take full width in mobile */
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto !important;
+  }
+
+  /* Remove any overflow constraints in the container */
+  .fullscreen-container:fullscreen {
+    overflow: visible !important;
+  }
+
+  /* Mobile portrait mode - full width */
+  @media (orientation: portrait) {
+    .fullscreen-container:fullscreen canvas.p5Canvas {
+      width: 100vw !important;
+      max-width: 100vw !important;
+      height: auto !important;
+    }
+  }
+
+  /* Mobile landscape mode - full height */
+  @media (orientation: landscape) {
+    .fullscreen-container:fullscreen canvas.p5Canvas {
+      height: 100vh !important;
+      width: auto !important;
+    }
+  }
+
+  /* Mobile specific exit button styling */
+  .fullscreen-exit-button {
+    padding: 0.75rem;
+    top: 0.5rem;
+    right: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+
+  .fullscreen-exit-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Add text shadow for better readability on forest text */
+.fullscreen-container:fullscreen text {
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.3);
+}

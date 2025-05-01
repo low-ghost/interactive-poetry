@@ -15,3 +15,8 @@ export const getCanvasSize = <T extends {}>(
       ? [p.windowWidth - 162, CANVAS_HEIGHT] // subtract sidebar + padding
       : [p.windowWidth - 80, CANVAS_HEIGHT] // mobile, so just subtract padding
     : [CANVAS_WIDTH, CANVAS_HEIGHT];
+
+/**
+ * Pixel density value used across the application
+ */
+export const PIXEL_DENSITY = 2;

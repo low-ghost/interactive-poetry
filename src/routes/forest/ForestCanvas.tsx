@@ -2,7 +2,7 @@ import ControlPanel from '@components/ControlPanel';
 import ResetButton from '@components/ResetButton';
 import SliderControl from '@components/SliderControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
-import { getCanvasSize } from '@utils/canvas';
+import { getCanvasSize, PIXEL_DENSITY } from '@utils/canvas';
 import { FOREST_GREENS_ARRAY, KAHU_BLUE } from '@utils/color';
 import {
   calculateCentroid,
@@ -345,6 +345,7 @@ const sketch = (p: P5ForestInstance) => {
     p.push();
     p.textSize(92);
     p.fill(...KAHU_BLUE);
+    p.noStroke();
     p.text(FOREST_TITLE, 40, 88);
     p.pop();
   };
@@ -354,6 +355,7 @@ const sketch = (p: P5ForestInstance) => {
     p.push();
     p.textSize(LETTER_SIZE);
     p.fill(0);
+    p.noStroke();
     const baseY = p.height * 0.3;
     POEM_LINES.forEach((line, i) =>
       p.text(line, 114, baseY + i * LETTER_SIZE * 1.4),
@@ -384,7 +386,25 @@ const sketch = (p: P5ForestInstance) => {
     p.textFont(bodoniFont);
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
-    p.pixelDensity(2);
+
+    // Set pixel density directly
+    p.pixelDensity(PIXEL_DENSITY);
+
+    // Disable stroke on text for crisper edges
+    p.noStroke();
+
+    // Set higher quality for text rendering
+    if (p.drawingContext) {
+      try {
+        // Attempt to set canvas context properties for better text
+        const ctx = p.drawingContext as CanvasRenderingContext2D;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        (ctx as any).textRendering = 'geometricPrecision';
+      } catch (e) {
+        // Ignore errors if properties are not supported
+      }
+    }
   };
 
   p.updateWithProps = (props) => {

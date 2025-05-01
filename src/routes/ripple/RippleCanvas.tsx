@@ -4,7 +4,7 @@ import SliderControl from '@components/SliderControl';
 import TextAreaControl from '@components/TextAreaControl';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { ControlItem } from '@type/controls';
-import { getCanvasSize } from '@utils/canvas';
+import { getCanvasSize, PIXEL_DENSITY } from '@utils/canvas';
 import { createRandomColor } from '@utils/color';
 import { Color } from 'p5';
 import { useState } from 'react';
@@ -209,7 +209,25 @@ const sketch = (p: P5CanvasInstance<SketchProps>) => {
     p.createCanvas(canvasWidth, canvasHeight);
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(14);
-    p.pixelDensity(2);
+
+    // Set pixel density directly
+    p.pixelDensity(PIXEL_DENSITY);
+
+    // Add improved text rendering settings
+    p.noStroke(); // Remove stroke from text for crisper rendering
+
+    // Try to improve rendering context if available
+    if (p.drawingContext) {
+      try {
+        const ctx = p.drawingContext as CanvasRenderingContext2D;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        (ctx as any).textRendering = 'geometricPrecision';
+      } catch (e) {
+        // Ignore errors if properties are not supported
+      }
+    }
+
     generateCharacterGrid(canvasWidth, canvasHeight);
   };
 
