@@ -11,7 +11,6 @@ import {
   generateGammaRandom,
   Position2D,
 } from '@utils/math';
-import p5 from 'p5';
 import * as R from 'ramda';
 import { useState } from 'react';
 import { ETYMOLOGY_LINES, FOREST_TITLE, POEM_LINES, POEM_WORDS } from './poem';
@@ -36,7 +35,7 @@ const DEFAULT_LETTER_DENSITY = 400;
 const DISTRIBUTION_MODE = 'gamma'; // 'random', 'gamma', 'gaussian'
 const DEFAULT_GAMMA_SHAPE = 0.8; // Shape parameter c (from research)
 const DEFAULT_GAMMA_SCALE = 0.033; // Scale parameter b (from research)
-const LETTER_SIZE = 16;
+const LETTER_SIZE = 17;
 
 type ForestControls = {
   letterDensity: number;
@@ -56,7 +55,6 @@ const sketch = (p: P5ForestInstance) => {
     gammaShape: DEFAULT_GAMMA_SHAPE,
     gammaScale: DEFAULT_GAMMA_SCALE,
   };
-  let bodoniFont: p5.Font;
 
   let currentWordIndex = 0;
   type ReplacedWord = {
@@ -233,7 +231,6 @@ const sketch = (p: P5ForestInstance) => {
    */
   const drawBackgroundLetters = () => {
     p.push();
-    p.textSize(18);
 
     // Get all positions and filter out replaced ones
     const isNotReplaced = (pos: TreePosition) =>
@@ -289,14 +286,17 @@ const sketch = (p: P5ForestInstance) => {
       const targetColor = FOREST_GREENS_ARRAY[colorIndex];
       const letterSpacing = 10;
       const wordWidth = rw.word.length * letterSpacing;
-      const startX = rw.x - wordWidth / 2;
+      const startX = Math.round(rw.x - wordWidth / 2);
 
       // Render each letter
       const letterCount = Math.min(rw.sourcePositions.length, rw.word.length);
       R.range(0, letterCount).forEach((j) => {
         const letter = rw.word[j];
         const sourcePos = rw.sourcePositions[j];
-        const targetPos = { x: startX + j * letterSpacing, y: rw.y };
+        const targetPos = {
+          x: Math.round(startX + j * letterSpacing),
+          y: Math.round(rw.y),
+        };
 
         if (gatherProgress < 1) {
           // Animating letters
@@ -318,20 +318,20 @@ const sketch = (p: P5ForestInstance) => {
           // Draw fading 't'
           if (tOpacity > 0) {
             p.fill(0, 0, 0, tOpacity);
-            p.textSize(18);
+            p.textSize(LETTER_SIZE);
             p.text('t', pos.x, pos.y);
           }
 
           // Draw appearing letter
           if (letterOpacity > 0) {
             p.fill(r, g, b, letterOpacity);
-            p.textSize(18);
+            p.textSize(LETTER_SIZE);
             p.text(letter, pos.x, pos.y);
           }
         } else {
           // Draw final letter
           p.fill(targetColor[0], targetColor[1], targetColor[2], opacity);
-          p.textSize(18);
+          p.textSize(LETTER_SIZE);
           p.text(letter, targetPos.x, targetPos.y);
         }
       });
@@ -347,10 +347,9 @@ const sketch = (p: P5ForestInstance) => {
     const titleSize = p.width < 500 ? 72 : 92;
     p.textSize(titleSize);
     p.fill(...KAHU_BLUE);
-    p.noStroke();
     // Adjust position for smaller screens
     const titleX = p.width < 500 ? 20 : 40;
-    p.text(FOREST_TITLE, titleX, 88);
+    p.text(FOREST_TITLE, Math.round(titleX), 88);
     p.pop();
   };
 
@@ -358,18 +357,20 @@ const sketch = (p: P5ForestInstance) => {
   const drawPoem = () => {
     p.push();
     // Adjust text size based on screen width
-    const fontSize =
-      p.width < 500 ? Math.max(LETTER_SIZE - 2, 12) : LETTER_SIZE;
+    const fontSize = p.width < 500 ? LETTER_SIZE - 2 : LETTER_SIZE;
     p.textSize(fontSize);
     p.fill(0);
-    p.noStroke();
-    const baseY = p.height * 0.3;
+    const baseY = Math.round(p.height * 0.3);
 
     // Calculate left margin based on canvas width
     const leftMargin = p.width < 500 ? 20 : 114;
 
     POEM_LINES.forEach((line, i) =>
-      p.text(line, leftMargin, baseY + i * fontSize * 1.4),
+      p.text(
+        line,
+        Math.round(leftMargin),
+        Math.round(baseY + i * fontSize * 1.4),
+      ),
     );
     p.pop();
   };
@@ -385,8 +386,9 @@ const sketch = (p: P5ForestInstance) => {
 
     // Calculate right position based on canvas width
     // Ensure minimum separation between poem and etymology
-    const rightPosition =
-      p.width < 500 ? Math.max(p.width - 160, 170) : p.width - 280;
+    const rightPosition = Math.round(
+      p.width < 500 ? Math.max(p.width - 160, 170) : p.width - 280,
+    );
 
     // Calculate line height based on canvas height to stretch etymology
     // across the full height plus a bit more to go off-screen
@@ -394,24 +396,20 @@ const sketch = (p: P5ForestInstance) => {
     const lineHeight = (p.height * 1.02) / totalLines;
 
     // Start position slightly above the top of the canvas
-    const startY = -p.height * 0.01;
+    const startY = Math.round(-p.height * 0.01);
 
     ETYMOLOGY_LINES.forEach((line, i) =>
-      p.text(line, rightPosition, startY + i * lineHeight),
+      p.text(line, rightPosition, Math.round(startY + i * lineHeight)),
     );
     p.pop();
   };
 
-  p.preload = () => {
-    bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf');
-  };
-
   p.setup = () => {
     p.createCanvas(...getCanvasSize(p));
-    p.textFont(bodoniFont);
+    improveTextRendering(p);
+    p.textFont('Bodoni 72');
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
-    improveTextRendering(p);
   };
 
   p.updateWithProps = (props) => {
