@@ -36,5 +36,3 @@ export const useDarkMode = (): [Theme, () => void] => {
 
   return [theme, toggleTheme];
 };
-
-export default useDarkMode;
