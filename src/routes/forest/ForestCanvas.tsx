@@ -11,6 +11,7 @@ import {
   generateGammaRandom,
   Position2D,
 } from '@utils/math';
+import { Font } from 'p5';
 import * as R from 'ramda';
 import { useState } from 'react';
 import { ETYMOLOGY_LINES, FOREST_TITLE, POEM_LINES, POEM_WORDS } from './poem';
@@ -76,7 +77,7 @@ const sketch = (p: P5ForestInstance) => {
   let targetXOffset = 0;
   let targetYOffset = 0;
   let lastFrameTime = 0; // To calculate delta time for smoother animation
-
+  let bodoniFont: Font;
   let currentGreenIndex = 0;
 
   /**
@@ -91,7 +92,7 @@ const sketch = (p: P5ForestInstance) => {
     const createGammaPosition = (i: number) => {
       const seed1 = i * 10;
       const seed2 = i * 20 + 500;
-      const randomOffset = p.noise(seed1, time * 0.1) * 0.4 + 0.8;
+      const randomOffset = p.noise(seed1, time * 0.05) * 0.4 + 0.8;
 
       // Generate basic position from gamma distribution
       const gammaX = generateGammaRandom(
@@ -105,13 +106,13 @@ const sketch = (p: P5ForestInstance) => {
         state.gammaScale * 1.1,
       );
 
-      // Add noise factors
+      // Add noise factors - use continuous time for smoother animation
       let baseX =
         gammaToScreen(gammaX, width) +
-        p.noise(seed1 * 0.3, time * 0.03) * width * 0.9;
+        p.noise(seed1 * 0.3, time * 0.015) * width * 0.9;
       let baseY =
         gammaToScreen(gammaY, height) +
-        p.noise(seed2 * 0.3, time * 0.03) * height * 0.9;
+        p.noise(seed2 * 0.3, time * 0.015) * height * 0.9;
 
       // Apply environmental and attractor influences
       const envFactor = p.noise(baseX * 0.005, baseY * 0.005, i * 0.0001);
@@ -119,8 +120,8 @@ const sketch = (p: P5ForestInstance) => {
       // Calculate attractor influences
       const attractors = R.range(0, 5).map((a) => ({
         pos: {
-          x: p.noise(a * 1000, time * 0.01) * width,
-          y: p.noise(a * 2000, time * 0.01) * height,
+          x: p.noise(a * 1000, time * 0.005) * width,
+          y: p.noise(a * 2000, time * 0.005) * height,
         },
         influence: 0,
       }));
@@ -150,14 +151,14 @@ const sketch = (p: P5ForestInstance) => {
 
       // Add random drift and constrain to canvas
       baseX = p.constrain(
-        baseX + p.noise(seed1 * 0.5, time * 0.02) * width * 0.3 - width * 0.15,
+        baseX + p.noise(seed1 * 0.5, time * 0.01) * width * 0.3 - width * 0.15,
         5,
         width - 15,
       );
 
       baseY = p.constrain(
         baseY +
-          p.noise(seed2 * 0.5, time * 0.02) * height * 0.3 -
+          p.noise(seed2 * 0.5, time * 0.01) * height * 0.3 -
           height * 0.15,
         5,
         height - 15,
@@ -176,19 +177,32 @@ const sketch = (p: P5ForestInstance) => {
       letterScale: 1.0,
     });
 
-    const createRandomPosition = (i: number) => ({
-      baseX: p.random(width),
-      baseY: p.random(height),
-      letterScale: p.noise(i * 0.5, 9999) * 0.4 + 0.8,
-    });
+    const createRandomPosition = (i: number) => {
+      // Time factor controls animation speed of pattern changes, 0.01 is slow
+      const timeFactored = time * 0.01;
+      // Large offsets ensure different noise spaces for different properties
+      // The specific values aren't critical, just need to be far apart
+      const Y_COORDINATE_OFFSET = 5000;
+      const SCALE_VARIATION_OFFSET = 10000;
+      return {
+        // Scale the noise output (0-1) to cover the entire canvas plus edges (1.1 == 110% coverage)
+        baseX: p.noise(i, timeFactored) * width * 1.1,
+        baseY: p.noise(i + Y_COORDINATE_OFFSET, timeFactored) * height * 1.1,
+        // Tree size variation parameters
+        // - scale range of 0.4 = magnitude of variation (±20% from base)
+        // - scale base of 0.8 = minimum scale (80% of default size at minimum)
+        letterScale: p.noise(i + SCALE_VARIATION_OFFSET) * 0.4 + 0.8,
+      };
+    };
 
     // Higher-order function to create the final tree position
     const finalizePosition = (basePos: TreePositionBase) => {
-      // Add sway effect
+      // Add sway effect with smoother continuous movement
       const swayX =
-        Math.sin(time + basePos.baseY * 0.01) * state.swayAmount + xOffset;
+        Math.sin(time * 0.8 + basePos.baseY * 0.01) * state.swayAmount +
+        xOffset;
       const swayY =
-        Math.cos(time + basePos.baseX * 0.01) * (state.swayAmount / 2) +
+        Math.cos(time * 0.8 + basePos.baseX * 0.01) * (state.swayAmount / 2) +
         yOffset;
 
       // Calculate opacity based on distance from center
@@ -290,6 +304,12 @@ const sketch = (p: P5ForestInstance) => {
 
       // Render each letter
       const letterCount = Math.min(rw.sourcePositions.length, rw.word.length);
+      // Animating letters
+      const easedProgress = easeOutCubic(gatherProgress);
+      // Cross-fade between 't' and target letter
+      const letterOpacity = p.map(easedProgress, 0.5, 0.8, 0, opacity);
+      const tOpacity = p.map(easedProgress, 0.5, 0.8, opacity, 0);
+
       R.range(0, letterCount).forEach((j) => {
         const letter = rw.word[j];
         const sourcePos = rw.sourcePositions[j];
@@ -299,21 +319,10 @@ const sketch = (p: P5ForestInstance) => {
         };
 
         if (gatherProgress < 1) {
-          // Animating letters
-          const easedProgress = easeOutCubic(gatherProgress);
           const pos = {
             x: p.lerp(sourcePos.x, targetPos.x, easedProgress),
             y: p.lerp(sourcePos.y, targetPos.y, easedProgress),
           };
-
-          // Cross-fade between 't' and target letter
-          const letterOpacity = p.map(easedProgress, 0.5, 0.8, 0, opacity);
-          const tOpacity = p.map(easedProgress, 0.5, 0.8, opacity, 0);
-
-          // Color transition
-          const r = p.lerp(0, targetColor[0], easedProgress);
-          const g = p.lerp(0, targetColor[1], easedProgress);
-          const b = p.lerp(0, targetColor[2], easedProgress);
 
           // Draw fading 't'
           if (tOpacity > 0) {
@@ -324,6 +333,10 @@ const sketch = (p: P5ForestInstance) => {
 
           // Draw appearing letter
           if (letterOpacity > 0) {
+            // Color transition
+            const [r, g, b] = targetColor.map((c) =>
+              p.lerp(0, c, easedProgress),
+            );
             p.fill(r, g, b, letterOpacity);
             p.textSize(LETTER_SIZE);
             p.text(letter, pos.x, pos.y);
@@ -404,10 +417,14 @@ const sketch = (p: P5ForestInstance) => {
     p.pop();
   };
 
+  p.preload = () => {
+    bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf');
+  };
+
   p.setup = () => {
     p.createCanvas(...getCanvasSize(p));
     improveTextRendering(p);
-    p.textFont('Bodoni 72');
+    p.textFont(bodoniFont);
     p.textAlign(p.LEFT, p.TOP);
     p.background(255);
   };
@@ -425,16 +442,16 @@ const sketch = (p: P5ForestInstance) => {
   p.draw = () => {
     p.background(255);
 
-    // Update animation timing with frame rate independence
+    // Update animation timing with improved frame rate independence
     const currentTime = p.millis() * 0.001;
-    const deltaTime = Math.min(0.05, currentTime - lastFrameTime);
+    const deltaTime = Math.min(0.05, currentTime - lastFrameTime); // Cap max delta time
     lastFrameTime = currentTime;
     time += deltaTime * 0.5;
 
     updateMouseInfluence();
 
-    // Apply smooth transitions to sway
-    const lerpFactor = 0.05 * (deltaTime * 20);
+    // Apply smoother transitions to sway with consistent animation speed
+    const lerpFactor = 0.05;
     xOffset = p.lerp(xOffset, targetXOffset, lerpFactor);
     yOffset = p.lerp(yOffset, targetYOffset, lerpFactor);
 
@@ -539,6 +556,10 @@ const sketch = (p: P5ForestInstance) => {
       // Constrain values to prevent extreme movement
       targetXOffset = p.constrain(targetXOffset, -30, 30);
       targetYOffset = p.constrain(targetYOffset, -30, 30);
+    } else {
+      // Slowly decay offset when mouse is outside canvas for smoother transition
+      targetXOffset *= 0.95;
+      targetYOffset *= 0.95;
     }
   };
 };
@@ -624,7 +645,7 @@ const ForestCanvas = () => {
           }
           className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm"
         >
-          <option value="random">Random (Scattered)</option>
+          <option value="random">Random (Perlin Scattered)</option>
           <option value="gamma">Natural Forest (Gamma)</option>
           <option value="gaussian">Plantation (Gaussian)</option>
         </select>
