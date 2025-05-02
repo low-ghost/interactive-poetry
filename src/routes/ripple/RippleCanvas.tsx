@@ -9,11 +9,6 @@ import { createRandomColor } from '@utils/color';
 import { Color } from 'p5';
 import { useState } from 'react';
 
-type RippleCanvasProps = {
-  /** Additional class names for the container. */
-  className?: string;
-};
-
 type Ripple = {
   x: number;
   y: number;
@@ -263,7 +258,7 @@ const sketch = (p: P5CanvasInstance<SketchProps>) => {
  *
  * @returns A P5.js canvas inside a div.
  */
-const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
+const RippleCanvas = () => {
   const [background, setBackground] = useState(true);
   const [strength, setStrength] = useState<number | null>(null);
   const [growthRate, setGrowthRate] = useState<number | null>(null);
@@ -384,11 +379,11 @@ const RippleCanvas = ({ className = '' }: RippleCanvasProps) => {
   ];
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className="flex flex-col">
       <div className="mb-4 w-full">
         <ControlPanel controls={controlItems} onReset={handleReset} />
       </div>
-      <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+      <div className="bg-white rounded-lg overflow-hidden">
         <ReactP5Wrapper
           sketch={sketch}
           background={background}

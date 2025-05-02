@@ -30,32 +30,23 @@ type TreePosition = Position2D &
 
 const WORD_DISPLAY_DURATION = 6000; // milliseconds to display words
 const GATHER_ANIMATION_DURATION = 1200; // milliseconds for gathering animation
-
-const DEFAULT_SWAY_AMOUNT = 10;
-const DEFAULT_LETTER_DENSITY = 400;
-const DISTRIBUTION_MODE = 'gamma'; // 'random', 'gamma', 'gaussian'
-const DEFAULT_GAMMA_SHAPE = 0.8; // Shape parameter c (from research)
-const DEFAULT_GAMMA_SCALE = 0.033; // Scale parameter b (from research)
 const LETTER_SIZE = 17;
 
-type ForestControls = {
-  letterDensity: number;
-  swayAmount: number;
-  distributionMode?: string;
-  gammaShape?: number;
-  gammaScale?: number;
+const DEFAULT_CONTROLS = {
+  letterDensity: 400,
+  swayAmount: 10,
+  distributionMode: 'gamma',
+  gammaShape: 0.8,
+  gammaScale: 0.033,
 };
+
+type ForestControls = typeof DEFAULT_CONTROLS;
 
 type P5ForestInstance = P5CanvasInstance<ForestControls>;
 
 const sketch = (p: P5ForestInstance) => {
-  const state = {
-    letterDensity: DEFAULT_LETTER_DENSITY,
-    swayAmount: DEFAULT_SWAY_AMOUNT,
-    distributionMode: DISTRIBUTION_MODE,
-    gammaShape: DEFAULT_GAMMA_SHAPE,
-    gammaScale: DEFAULT_GAMMA_SCALE,
-  };
+  // Use the default controls object for initial state
+  const state = { ...DEFAULT_CONTROLS };
 
   let currentWordIndex = 0;
   type ReplacedWord = {
@@ -67,8 +58,8 @@ const sketch = (p: P5ForestInstance) => {
     sourcePositions: Position2D[];
   };
   const replacedWords: ReplacedWord[] = [];
-  // Track which t positions are replaced
-  const replacedPositions: Position2D[] = [];
+  // Use a Set for efficient lookup of replaced positions
+  const replacedPositionKeys = new Set<string>();
 
   // Sway variables
   let time = 0;
@@ -246,11 +237,9 @@ const sketch = (p: P5ForestInstance) => {
   const drawBackgroundLetters = () => {
     p.push();
 
-    // Get all positions and filter out replaced ones
+    // Get all positions and filter out replaced ones using the Set
     const isNotReplaced = (pos: TreePosition) =>
-      !replacedPositions.some(
-        (rp) => p.dist(pos.baseX, pos.baseY, rp.x, rp.y) < 15,
-      );
+      !replacedPositionKeys.has(`${pos.baseX},${pos.baseY}`);
 
     // Draw all non-replaced trees with appropriate size and opacity
     R.pipe(
@@ -430,6 +419,7 @@ const sketch = (p: P5ForestInstance) => {
   };
 
   p.updateWithProps = (props) => {
+    // No need to check for undefined on the base type now, but checking doesn't hurt
     if (props.letterDensity !== undefined)
       state.letterDensity = props.letterDensity;
     if (props.swayAmount !== undefined) state.swayAmount = props.swayAmount;
@@ -493,10 +483,7 @@ const sketch = (p: P5ForestInstance) => {
 
     // Find trees near click point that haven't been replaced
     const availableTrees = positions.filter(
-      (pos) =>
-        !replacedPositions.some(
-          (rp) => p.dist(pos.baseX, pos.baseY, rp.x, rp.y) < 15,
-        ),
+      (pos) => !replacedPositionKeys.has(`${pos.baseX},${pos.baseY}`),
     );
 
     // Add distance from click and sort
@@ -518,9 +505,9 @@ const sketch = (p: P5ForestInstance) => {
     }));
     const centroid = calculateCentroid(treesToReplace);
 
-    // Mark positions as replaced
+    // Mark positions as replaced using the Set
     treesToReplace.forEach((pos) =>
-      replacedPositions.push({ x: pos.baseX, y: pos.baseY }),
+      replacedPositionKeys.add(`${pos.baseX},${pos.baseY}`),
     );
 
     // Add the word with animation
@@ -566,46 +553,36 @@ const sketch = (p: P5ForestInstance) => {
 
 /** ForestCanvas is a component that renders a typographic forest visualization. */
 const ForestCanvas = () => {
-  const [controls, setControls] = useState<ForestControls>({
-    letterDensity: DEFAULT_LETTER_DENSITY,
-    swayAmount: DEFAULT_SWAY_AMOUNT,
-    distributionMode: DISTRIBUTION_MODE,
-    gammaShape: DEFAULT_GAMMA_SHAPE,
-    gammaScale: DEFAULT_GAMMA_SCALE,
-  });
+  // Use the default controls object for initial state
+  const [controls, setControls] = useState<ForestControls>(DEFAULT_CONTROLS);
   const [showFormula, setShowFormula] = useState<boolean>(false);
 
-  // Update a single control value
-  const updateControl = (key: keyof ForestControls) => (value: number) =>
-    setControls((prev) => ({ ...prev, [key]: value }));
+  // Update a single control value (handle string for dropdown)
+  const updateControl =
+    (key: keyof ForestControls) => (value: number | string) =>
+      setControls((prev) => ({ ...prev, [key]: value }));
 
-  // Reset all controls to defaults
-  const handleReset = () =>
-    setControls({
-      letterDensity: DEFAULT_LETTER_DENSITY,
-      swayAmount: DEFAULT_SWAY_AMOUNT,
-      distributionMode: DISTRIBUTION_MODE,
-      gammaShape: DEFAULT_GAMMA_SHAPE,
-      gammaScale: DEFAULT_GAMMA_SCALE,
-    });
+  // Reset all controls directly using the default object
+  const handleReset = () => setControls(DEFAULT_CONTROLS);
 
-  // Create a slider control with reset button
+  // Create a slider control with reset button using the default object
   const createSliderControl = (
     key: keyof ForestControls,
     min: number,
     max: number,
     step: number,
-    defaultValue: number,
+    // No defaultValue param needed here, it's sourced from DEFAULT_CONTROLS
   ) => (
     <>
       <SliderControl
-        value={controls[key] as number}
-        onChange={updateControl(key)}
+        value={controls[key] as number} // Need cast as type might include string
+        onChange={(val) => updateControl(key)(val)} // Ensure number is passed
         min={min}
         max={max}
         step={step}
       />
-      <ResetButton onClick={() => updateControl(key)(defaultValue)} />
+      {/* Reset button now uses the value from DEFAULT_CONTROLS */}
+      <ResetButton onClick={() => updateControl(key)(DEFAULT_CONTROLS[key])} />
     </>
   );
 
@@ -621,14 +598,20 @@ const ForestCanvas = () => {
         100,
         1000,
         50,
-        DEFAULT_LETTER_DENSITY,
+        // No default needed here
       ),
     },
     {
       id: 'swayAmount',
       label: 'Wind Intensity',
       description: 'Controls how much the trees sway, like wind in a forest.',
-      control: createSliderControl('swayAmount', 0, 50, 5, DEFAULT_SWAY_AMOUNT),
+      control: createSliderControl(
+        'swayAmount',
+        0,
+        50,
+        5,
+        // No default needed here
+      ),
     },
     {
       id: 'distributionMode',
@@ -637,12 +620,7 @@ const ForestCanvas = () => {
       control: (
         <select
           value={controls.distributionMode}
-          onChange={(e) =>
-            setControls((prev) => ({
-              ...prev,
-              distributionMode: e.target.value,
-            }))
-          }
+          onChange={(e) => updateControl('distributionMode')(e.target.value)}
           className="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-sm"
         >
           <option value="random">Random (Perlin Scattered)</option>
@@ -660,7 +638,7 @@ const ForestCanvas = () => {
         0.5,
         5,
         0.1,
-        DEFAULT_GAMMA_SHAPE,
+        // No default needed here
       ),
     },
     {
@@ -673,7 +651,7 @@ const ForestCanvas = () => {
         0.01,
         0.1,
         0.001,
-        DEFAULT_GAMMA_SCALE,
+        // No default needed here
       ),
     },
   ];
@@ -773,7 +751,7 @@ const ForestCanvas = () => {
           )}
         </div>
       </div>
-      <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden">
         <ReactP5Wrapper sketch={sketch} {...controls} />
       </div>
     </div>

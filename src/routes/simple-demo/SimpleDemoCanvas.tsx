@@ -2,11 +2,6 @@ import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { getCanvasSize } from '@utils/canvas';
 import { useState } from 'react';
 
-type SimpleDemoCanvasProps = {
-  /** Additional class names for the container. */
-  className?: string;
-};
-
 const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
   let cursorColor = 100;
 
@@ -44,7 +39,7 @@ const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
  *
  * @returns A P5.js canvas inside a div.
  */
-const SimpleDemoCanvas = ({ className = '' }: SimpleDemoCanvasProps) => {
+const SimpleDemoCanvas = () => {
   const [cursorColor, setCursorColor] = useState(100);
 
   const handleIncrement = () => {
@@ -56,7 +51,7 @@ const SimpleDemoCanvas = ({ className = '' }: SimpleDemoCanvasProps) => {
   };
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className="flex flex-col">
       <div className="flex items-center gap-4 mb-4 self-start">
         <span className="text-sm font-medium">Cursor Color: {cursorColor}</span>
         <button
@@ -72,7 +67,7 @@ const SimpleDemoCanvas = ({ className = '' }: SimpleDemoCanvasProps) => {
           Darker (-50)
         </button>
       </div>
-      <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+      <div className="rounded-lg overflow-hidden">
         <ReactP5Wrapper sketch={sketch} cursorColor={cursorColor} />
       </div>
     </div>
