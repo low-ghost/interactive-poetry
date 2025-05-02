@@ -1,5 +1,6 @@
 import Sidebar from '@components/Sidebar';
 import { useDarkMode } from '@hooks/useDarkMode';
+import { useIsMobile } from '@hooks/useIsMobile';
 import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
@@ -7,24 +8,14 @@ import { Outlet } from 'react-router-dom';
 const RootLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [theme, toggleTheme] = useDarkMode();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
-  // Check for mobile viewport on mount and resize
+  // Set initial sidebar state based on screen size
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      // Only set initial state on first mount, not on every resize
-      if (mobile && window.innerWidth < 640) {
-        setSidebarOpen(false);
-      }
-    };
-    // Initial check
-    checkMobile();
-    // Listen for window resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    if (isMobile && window.innerWidth < 640) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);

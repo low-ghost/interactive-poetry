@@ -26,6 +26,7 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
+      "@hooks": ["src/hooks"],
       "@hooks/*": ["src/hooks/*"],
       "@components/*": ["src/components/*"],
       "@layouts/*": ["src/layouts/*"],

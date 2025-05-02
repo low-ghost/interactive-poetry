@@ -1,5 +1,5 @@
 import FullScreenButton from '@components/FullScreenButton';
-import { GitHubIcon } from '@components/icons';
+import { Github } from 'lucide-react';
 import { ReactNode, useId } from 'react';
 
 const GITHUB_BASE_URL =
@@ -43,7 +43,7 @@ const CanvasLayout = ({
               title="View source code on GitHub"
               onClick={(e) => e.stopPropagation()}
             >
-              <GitHubIcon className="h-4 w-4" />
+              <Github className="h-4 w-4" />
               <span>Source</span>
             </a>
           )}

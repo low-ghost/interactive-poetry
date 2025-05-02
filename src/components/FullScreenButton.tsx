@@ -1,3 +1,4 @@
+import { useIsMobile } from '@hooks/useIsMobile';
 import { Maximize2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -20,22 +21,9 @@ const FullScreenButton = ({
   className = '',
 }: FullScreenButtonProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
-  // Check if we're on a mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    // Initial check
-    checkMobile();
-
-    // Add resize listener
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const toggleFullscreen = () => {
     const target = document.getElementById(targetId);
     if (!target) return;
@@ -72,6 +60,7 @@ const FullScreenButton = ({
       }
     }
   };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   // Update fullscreen state when it changes
   useEffect(() => {

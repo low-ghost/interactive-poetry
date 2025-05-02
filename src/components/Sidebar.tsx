@@ -1,35 +1,37 @@
+import { useIsMobile } from '@hooks/useIsMobile';
 import { AppRoutes } from '@type/routes';
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ForestIcon,
-  HomeIcon,
-  RippleIcon,
-  SimpleDemoIcon,
-} from './icons';
+  ChevronsLeft,
+  ChevronsRight,
+  Home,
+  Moon,
+  MousePointer,
+  Sun,
+  TreePine,
+  Waves,
+} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 const navigationConfig = [
   {
     path: AppRoutes.HOME,
     label: 'Home',
-    icon: <HomeIcon size={24} />,
+    icon: <Home size={24} />,
   },
   {
     path: AppRoutes.SIMPLE_DEMO,
     label: 'Simple Demo',
-    icon: <SimpleDemoIcon size={24} />,
+    icon: <MousePointer size={24} />,
   },
   {
     path: AppRoutes.RIPPLE,
     label: 'Ripple Effect',
-    icon: <RippleIcon size={24} />,
+    icon: <Waves size={24} />,
   },
   {
     path: AppRoutes.FOREST,
     label: 'Forest',
-    icon: <ForestIcon size={24} />,
+    icon: <TreePine size={24} />,
   },
 ];
 
@@ -47,21 +49,7 @@ const Sidebar = ({
   toggleTheme,
 }: SidebarProps) => {
   const location = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check for mobile viewport on mount and resize
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    // Initial check
-    checkMobile();
-
-    // Listen for window resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -90,7 +78,7 @@ const Sidebar = ({
                 className="p-2 rounded-md text-white hover:bg-gray-700"
                 aria-label="Close navigation"
               >
-                <ChevronLeftIcon size={24} />
+                <ChevronsLeft size={24} />
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto p-4">
@@ -121,38 +109,12 @@ const Sidebar = ({
               >
                 {theme === 'dark' ? (
                   <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                      />
-                    </svg>
+                    <Sun className="h-6 w-6" />
                     <span className="ml-4">Light Mode</span>
                   </>
                 ) : (
                   <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                      />
-                    </svg>
+                    <Moon className="h-6 w-6" />
                     <span className="ml-4">Dark Mode</span>
                   </>
                 )}
@@ -175,9 +137,9 @@ const Sidebar = ({
               aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
               {sidebarOpen ? (
-                <ChevronLeftIcon size={24} />
+                <ChevronsLeft size={24} />
               ) : (
-                <ChevronRightIcon size={24} />
+                <ChevronsRight size={24} />
               )}
             </button>
           </div>
@@ -218,20 +180,7 @@ const Sidebar = ({
             >
               {theme === 'dark' ? (
                 <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-gray-800 dark:text-gray-200"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
+                  <Sun className="h-6 w-6 text-gray-800 dark:text-gray-200" />
                   <span
                     className={`ml-4 text-gray-800 dark:text-gray-200 ${
                       sidebarOpen ? 'block' : 'hidden'
@@ -242,20 +191,7 @@ const Sidebar = ({
                 </>
               ) : (
                 <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-gray-800 dark:text-gray-200"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                    />
-                  </svg>
+                  <Moon className="h-6 w-6 text-gray-800 dark:text-gray-200" />
                   <span
                     className={`ml-4 text-gray-800 dark:text-gray-200 ${
                       sidebarOpen ? 'block' : 'hidden'
