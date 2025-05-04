@@ -1,22 +1,15 @@
-import CanvasLayout from '@layouts/CanvasLayout';
-import { lazy, Suspense } from 'react';
+import GenericCanvasPage from '@layouts/GenericCanvasPage';
+import { lazy } from 'react';
 
-const SimpleDemoCanvas = lazy(() => import('./SimpleDemoCanvas'));
+const LazySimpleDemoCanvas = lazy(() => import('./SimpleDemoCanvas'));
 
 const SimpleDemoPage = () => (
-  <CanvasLayout
+  <GenericCanvasPage
     title="P5.js Simple Demo"
     description="Interact with the canvas below by moving your mouse over it."
     githubLink="routes/simple-demo/SimpleDemoCanvas.tsx"
-  >
-    <Suspense
-      fallback={
-        <div className="animate-pulse h-[600px] w-full bg-gray-200 dark:bg-gray-700 rounded-lg" />
-      }
-    >
-      <SimpleDemoCanvas />
-    </Suspense>
-  </CanvasLayout>
+    CanvasComponent={LazySimpleDemoCanvas}
+  />
 );
 
 export default SimpleDemoPage;

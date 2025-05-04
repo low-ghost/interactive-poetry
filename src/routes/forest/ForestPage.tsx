@@ -1,22 +1,15 @@
-import CanvasLayout from '@layouts/CanvasLayout';
-import { lazy, Suspense } from 'react';
+import GenericCanvasPage from '@layouts/GenericCanvasPage';
+import { lazy } from 'react';
 
-const ForestCanvas = lazy(() => import('@routes/forest/ForestCanvas'));
+const LazyForestCanvas = lazy(() => import('./ForestCanvas'));
 
 const ForestPage = () => (
-  <CanvasLayout
+  <GenericCanvasPage
     title="Forest"
     description="A typographic exploration of the word 'forest' through etymology and poetry, with scattered letters forming a landscape."
     githubLink="routes/forest/ForestCanvas.tsx"
-  >
-    <Suspense
-      fallback={
-        <div className="animate-pulse h-[600px] w-full bg-gray-200 dark:bg-gray-700 rounded-lg" />
-      }
-    >
-      <ForestCanvas />
-    </Suspense>
-  </CanvasLayout>
+    CanvasComponent={LazyForestCanvas}
+  />
 );
 
 export default ForestPage;
