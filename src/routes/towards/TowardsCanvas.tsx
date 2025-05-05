@@ -91,18 +91,26 @@ const sketch = (p: P5CanvasInstance) => {
   };
 
   p.setup = () => {
+    // Get initial canvas size
     const [width, height] = getCanvasSize(p);
+
     p.createCanvas(width, height);
     p.angleMode(p.RADIANS);
     p.imageMode(p.CENTER);
     p.colorMode(p.RGB);
     p.textFont(bodoniFont);
-    p.frameRate(24); // Lower framerate to reduce resource usage
+    p.frameRate(30); // Lower framerate to reduce resource usage
     // Create shared maskGraphic once
     sharedMaskGraphic = p.createGraphics(width, height);
     generate();
     isInitialized = true;
     needsUpdate = true;
+
+    // Add fullscreen change event listener
+    document.addEventListener('fullscreenchange', () => {
+      // Trigger windowResized to adjust canvas dimensions
+      p.windowResized();
+    });
   };
 
   const startCrossfade = () => {
@@ -920,7 +928,15 @@ const sketch = (p: P5CanvasInstance) => {
 
   // Handle window resize
   p.windowResized = () => {
-    const [width, height] = getCanvasSize(p);
+    // Get dimensions based on container width but expand height if in fullscreen
+    let [width, height] = getCanvasSize(p);
+
+    // If in fullscreen, only adjust the height while keeping container width
+    if (document.fullscreenElement) {
+      height = window.innerHeight;
+      width = height;
+    }
+
     p.resizeCanvas(width, height);
 
     try {
