@@ -10,7 +10,7 @@ export enum AppRoutes {
   SIMPLE_DEMO = '/simple-demo',
   RIPPLE = '/ripple',
   FOREST = '/forest',
-  COLLAGE = '/collage',
+  TOWARDS = '/towards',
 }
 
 /**

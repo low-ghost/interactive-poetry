@@ -36,9 +36,9 @@ const router = createHashRouter(
           })}
         />
         <Route
-          path="collage"
+          path="towards"
           lazy={async () => ({
-            Component: (await import('./routes/collage/CollagePage')).default,
+            Component: (await import('./routes/towards/TowardsPage')).default,
           })}
         />
       </Route>

@@ -35,8 +35,8 @@ const navigationConfig = [
     icon: <TreePine size={24} />,
   },
   {
-    path: AppRoutes.COLLAGE,
-    label: 'Generative Collage',
+    path: AppRoutes.TOWARDS,
+    label: 'Towards',
     icon: <Image size={24} />,
   },
 ];

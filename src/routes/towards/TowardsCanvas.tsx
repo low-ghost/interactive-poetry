@@ -11,6 +11,8 @@ const CONFIG = {
   maxSize: 70,
   maxPolygonSides: 7,
   shapeVariety: 5,
+  crossfadeDuration: 6000, // 6 seconds for crossfade
+  displayDuration: 10000, // Total display time per line
 };
 
 type ShapeType = 'basic' | 'polygon' | 'custom' | 'chaotic';
@@ -55,8 +57,6 @@ const sketch = (p: P5CanvasInstance) => {
   let lastRenderTime = 0;
   let isCrossfading = false;
   let crossfadeStartTime = 0;
-  const CROSSFADE_DURATION = 6000; // 6 seconds for crossfade
-  const DISPLAY_DURATION = 10000; // Total display time per line
 
   // Poem display variables
   const poemLines = POEM.trim().split('\n');
@@ -83,6 +83,13 @@ const sketch = (p: P5CanvasInstance) => {
     bodoniFont = p.loadFont('/interactive-poetry/fonts/bodoni-72-book.ttf');
   };
 
+  // Regenerate all elements
+  const generate = () => {
+    generateCollage();
+    generateDecorativeLetters();
+    generatePoemLineDisplay();
+  };
+
   p.setup = () => {
     const [width, height] = getCanvasSize(p);
     p.createCanvas(width, height);
@@ -91,25 +98,191 @@ const sketch = (p: P5CanvasInstance) => {
     p.colorMode(p.RGB);
     p.textFont(bodoniFont);
     p.frameRate(30); // Lower framerate to reduce resource usage
-
     // Create shared maskGraphic once
     sharedMaskGraphic = p.createGraphics(width, height);
-
-    generateCollage();
-    generateDecorativeLetters();
-    generatePoemLineDisplay();
+    generate();
     isInitialized = true;
     needsUpdate = true;
   };
 
+  const startCrossfade = () => {
+    // Set crossfade start time
+    crossfadeStartTime = p.millis();
+    isCrossfading = true;
+
+    // Store current elements for crossfade
+    previousCollageElements = [...collageElements];
+    previousDecorativeLetters = [...decorativeLetters];
+    generate();
+    // Update timing
+    lastLineChangeTime = crossfadeStartTime;
+    needsUpdate = true;
+  };
+
+  const selectRandomShapeType = (): ShapeType =>
+    p.random() < 0.6
+      ? p.random() < 0.5
+        ? 'basic'
+        : 'polygon'
+      : p.random() < 0.5
+      ? 'chaotic'
+      : 'custom';
+
+  const selectRandomBasicShape = (): string =>
+    p.random() < 0.5 ? 'rectangle' : p.random() < 0.5 ? 'circle' : 'ellipse';
+
+  // Helper to select a random pattern type
+  const selectRandomPatternType = (): string => {
+    const patternTypes = ['dots', 'lines', 'cross', 'zigzag'];
+    return patternTypes[Math.floor(p.random(0, patternTypes.length))];
+  };
+
+  // Helper to generate circle or ellipse points
+  const generateCircleOrEllipsePoints = (
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number,
+    numPoints: number = 24,
+  ): Position2D[] => {
+    const points: Position2D[] = [];
+    for (let i = 0; i < numPoints; i++) {
+      const angle = (i / numPoints) * p.TWO_PI;
+      points.push({
+        x: centerX + radiusX * Math.cos(angle),
+        y: centerY + radiusY * Math.sin(angle),
+      });
+    }
+    return points;
+  };
+
+  // Simple edge subdivision to create natural, shoreline-like shapes
+  const subdivideEdge = (
+    p1: Position2D,
+    p2: Position2D,
+    depth: number,
+    roughness: number,
+  ): Position2D[] => {
+    if (depth <= 0) return [];
+
+    // Create midpoint with perlin noise displacement
+    const midX = (p1.x + p2.x) / 2;
+    const midY = (p1.y + p2.y) / 2;
+
+    // Calculate perpendicular vector for displacement
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+
+    if (len < 0.01) return []; // Avoid division by zero or tiny edges
+
+    // Use perlin noise for natural displacement
+    const noiseVal = p.noise(midX * 0.01, midY * 0.01) * 2 - 1;
+    const displacement = roughness * (depth / 3) * noiseVal;
+
+    const midPoint = {
+      x: midX + (-dy / len) * displacement,
+      y: midY + (dx / len) * displacement,
+    };
+
+    // Recursively subdivide the segments
+    const leftSide = subdivideEdge(p1, midPoint, depth - 1, roughness * 0.8);
+    const rightSide = subdivideEdge(midPoint, p2, depth - 1, roughness * 0.8);
+
+    return [...leftSide, midPoint, ...rightSide];
+  };
+
+  // Unified shape generation function
+  const generateShape = (
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number,
+    shapeType: ShapeType,
+    basicShapeType?: string,
+    sides: number = 5,
+  ): Position2D[] => {
+    const points: Position2D[] = [];
+    const radius = Math.min(width, height) / 2;
+
+    if (shapeType === 'basic') {
+      if (basicShapeType === 'circle') {
+        return generateCircleOrEllipsePoints(centerX, centerY, radius, radius);
+      } else if (basicShapeType === 'ellipse') {
+        return generateCircleOrEllipsePoints(
+          centerX,
+          centerY,
+          width / 2,
+          height / 2,
+        );
+      } else {
+        // Rectangle
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        points.push({ x: centerX - halfWidth, y: centerY - halfHeight });
+        points.push({ x: centerX + halfWidth, y: centerY - halfHeight });
+        points.push({ x: centerX + halfWidth, y: centerY + halfHeight });
+        points.push({ x: centerX - halfWidth, y: centerY + halfHeight });
+        return points;
+      }
+    } else if (shapeType === 'polygon') {
+      // Generate polygon
+      const angleStep = p.TWO_PI / sides;
+      for (let i = 0; i < sides; i++) {
+        const angle = i * angleStep;
+        const r = radius * (0.8 + p.random(0, 0.4));
+        points.push({
+          x: centerX + r * Math.cos(angle),
+          y: centerY + r * Math.sin(angle),
+        });
+      }
+      return points;
+    } else {
+      // Organic or chaotic shape with perlin noise
+      const isHighlyChaotic = shapeType === 'chaotic';
+      const basePoints: Position2D[] = [];
+      const numPoints = Math.floor(p.random(3, 7));
+
+      // Generate base points with perlin noise variation
+      for (let i = 0; i < numPoints; i++) {
+        const angle = (i / numPoints) * p.TWO_PI;
+        const noiseVal = p.noise(Math.cos(angle) * 0.3, Math.sin(angle) * 0.3);
+        const r = radius * (0.6 + noiseVal * (isHighlyChaotic ? 0.7 : 0.5));
+
+        basePoints.push({
+          x: centerX + r * Math.cos(angle),
+          y: centerY + r * Math.sin(angle),
+        });
+      }
+
+      // Apply recursive subdivision for shoreline effect
+      const depth = isHighlyChaotic ? 3 : 2;
+
+      for (let i = 0; i < basePoints.length; i++) {
+        const p1 = basePoints[i];
+        const p2 = basePoints[(i + 1) % basePoints.length];
+
+        // Add current point
+        points.push(p1);
+
+        // Add subdivided points between this point and next
+        if (depth > 0) {
+          const subdivided = subdivideEdge(
+            p1,
+            p2,
+            depth,
+            radius * (isHighlyChaotic ? 0.4 : 0.25),
+          );
+          points.push(...subdivided);
+        }
+      }
+      return points;
+    }
+  };
+
+  // Generate collage elements
   const generateCollage = () => {
     const [width, height] = getCanvasSize(p);
-
-    // Store current collage elements for crossfade if we have any
-    if (collageElements.length > 0) {
-      previousCollageElements = [...collageElements];
-    }
-
     collageElements = [];
 
     // Set image count and select images
@@ -180,14 +353,7 @@ const sketch = (p: P5CanvasInstance) => {
       const rotation = p.random(0, p.TWO_PI);
 
       // Select shape type
-      const shapeType: ShapeType =
-        p.random() < 0.6
-          ? p.random() < 0.5
-            ? 'basic'
-            : 'polygon'
-          : p.random() < 0.5
-          ? 'chaotic'
-          : 'custom';
+      const shapeType: ShapeType = selectRandomShapeType();
 
       // Generate shape
       const maskWidth = Math.max(imgWidth, imgHeight) * 0.6;
@@ -197,12 +363,7 @@ const sketch = (p: P5CanvasInstance) => {
 
       // Generate shape points based on type
       if (shapeType === 'basic') {
-        basicShape =
-          p.random() < 0.5
-            ? 'rectangle'
-            : p.random() < 0.5
-            ? 'circle'
-            : 'ellipse';
+        basicShape = selectRandomBasicShape();
 
         maskPoints = generateShape(
           x,
@@ -259,9 +420,7 @@ const sketch = (p: P5CanvasInstance) => {
         borderColor: hasBorder ? createRandomColorArray(p) : [0, 0, 0],
         zIndex: Math.floor(p.random(0, 10)),
         hasPattern,
-        patternType: hasPattern
-          ? ['dots', 'lines', 'cross', 'zigzag'][Math.floor(p.random(0, 4))]
-          : '',
+        patternType: hasPattern ? selectRandomPatternType() : '',
       });
     }
 
@@ -290,11 +449,7 @@ const sketch = (p: P5CanvasInstance) => {
           size,
           size,
           shapeType,
-          shapeType === 'basic'
-            ? p.random() < 0.5
-              ? 'circle'
-              : 'ellipse'
-            : undefined,
+          shapeType === 'basic' ? selectRandomBasicShape() : undefined,
         ),
         imageIndex: -1,
         shapeType,
@@ -303,9 +458,7 @@ const sketch = (p: P5CanvasInstance) => {
         borderColor: createRandomColorArray(p),
         zIndex: Math.floor(p.random(0, 10)),
         hasPattern,
-        patternType: hasPattern
-          ? ['dots', 'lines', 'cross', 'zigzag'][Math.floor(p.random(0, 4))]
-          : '',
+        patternType: hasPattern ? selectRandomPatternType() : '',
       });
     }
 
@@ -313,145 +466,9 @@ const sketch = (p: P5CanvasInstance) => {
     collageElements.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
   };
 
-  // Unified shape generation function
-  const generateShape = (
-    centerX: number,
-    centerY: number,
-    width: number,
-    height: number,
-    shapeType: ShapeType,
-    basicShapeType?: string,
-    sides: number = 5,
-  ): Position2D[] => {
-    const points: Position2D[] = [];
-    const radius = Math.min(width, height) / 2;
-
-    if (shapeType === 'basic') {
-      if (basicShapeType === 'circle' || basicShapeType === 'ellipse') {
-        // Generate circle/ellipse points
-        const numPoints = 24;
-        for (let i = 0; i < numPoints; i++) {
-          const angle = (i / numPoints) * p.TWO_PI;
-          points.push({
-            x:
-              centerX +
-              (basicShapeType === 'circle' ? radius : width / 2) *
-                Math.cos(angle),
-            y:
-              centerY +
-              (basicShapeType === 'circle' ? radius : height / 2) *
-                Math.sin(angle),
-          });
-        }
-      } else {
-        // Rectangle
-        const halfWidth = width / 2;
-        const halfHeight = height / 2;
-        points.push({ x: centerX - halfWidth, y: centerY - halfHeight });
-        points.push({ x: centerX + halfWidth, y: centerY - halfHeight });
-        points.push({ x: centerX + halfWidth, y: centerY + halfHeight });
-        points.push({ x: centerX - halfWidth, y: centerY + halfHeight });
-      }
-    } else if (shapeType === 'polygon') {
-      // Generate polygon
-      const angleStep = p.TWO_PI / sides;
-      for (let i = 0; i < sides; i++) {
-        const angle = i * angleStep;
-        const r = radius * (0.8 + p.random(0, 0.4));
-        points.push({
-          x: centerX + r * Math.cos(angle),
-          y: centerY + r * Math.sin(angle),
-        });
-      }
-    } else {
-      // Organic or chaotic shape with perlin noise
-      const isHighlyChaotic = shapeType === 'chaotic';
-      const basePoints: Position2D[] = [];
-      const numPoints = Math.floor(p.random(3, 7));
-
-      // Generate base points with perlin noise variation
-      for (let i = 0; i < numPoints; i++) {
-        const angle = (i / numPoints) * p.TWO_PI;
-        const noiseVal = p.noise(Math.cos(angle) * 0.3, Math.sin(angle) * 0.3);
-        const r = radius * (0.6 + noiseVal * (isHighlyChaotic ? 0.7 : 0.5));
-
-        basePoints.push({
-          x: centerX + r * Math.cos(angle),
-          y: centerY + r * Math.sin(angle),
-        });
-      }
-
-      // Apply recursive subdivision for shoreline effect
-      const depth = isHighlyChaotic ? 3 : 2;
-
-      for (let i = 0; i < basePoints.length; i++) {
-        const p1 = basePoints[i];
-        const p2 = basePoints[(i + 1) % basePoints.length];
-
-        // Add current point
-        points.push(p1);
-
-        // Add subdivided points between this point and next
-        if (depth > 0) {
-          const subdivided = subdivideEdge(
-            p1,
-            p2,
-            depth,
-            radius * (isHighlyChaotic ? 0.4 : 0.25),
-          );
-          points.push(...subdivided);
-        }
-      }
-    }
-
-    return points;
-  };
-
-  // Simple edge subdivision to create natural, shoreline-like shapes
-  const subdivideEdge = (
-    p1: Position2D,
-    p2: Position2D,
-    depth: number,
-    roughness: number,
-  ): Position2D[] => {
-    if (depth <= 0) return [];
-
-    // Create midpoint with perlin noise displacement
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2;
-
-    // Calculate perpendicular vector for displacement
-    const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const len = Math.sqrt(dx * dx + dy * dy);
-
-    if (len < 0.01) return []; // Avoid division by zero or tiny edges
-
-    // Use perlin noise for natural displacement
-    const noiseVal = p.noise(midX * 0.01, midY * 0.01) * 2 - 1;
-    const displacement = roughness * (depth / 3) * noiseVal;
-
-    const midPoint = {
-      x: midX + (-dy / len) * displacement,
-      y: midY + (dx / len) * displacement,
-    };
-
-    // Recursively subdivide the segments
-    const leftSide = subdivideEdge(p1, midPoint, depth - 1, roughness * 0.8);
-    const rightSide = subdivideEdge(midPoint, p2, depth - 1, roughness * 0.8);
-
-    return [...leftSide, midPoint, ...rightSide];
-  };
-
   // Generate random decorative letters
   const generateDecorativeLetters = () => {
     const [width, height] = getCanvasSize(p);
-
-    // Store current decorative letters for crossfade
-    if (decorativeLetters.length > 0) {
-      previousDecorativeLetters = [...decorativeLetters];
-    }
-
     decorativeLetters = [];
 
     const letterCount = Math.floor(p.random(3, 10));
@@ -494,34 +511,75 @@ const sketch = (p: P5CanvasInstance) => {
       let currentY = p.random(height * 0.2, height * 0.8);
 
       words.forEach((word, index) => {
-        // Calculate random position with horizontal order maintained
-        const x =
-          spacing * (index + 0.5) + p.random(-spacing * 0.3, spacing * 0.3);
-
         // Add some vertical variation but maintain general top-to-bottom order
         currentY += p.random(-20, 40);
         currentY = Math.max(50, Math.min(height - 50, currentY));
-
-        // Random size between 30px and 80px (slightly larger than before)
-        const size = p.random(30, 80);
-
         // Add random velocity (speed & direction)
         const speed = p.random(0.3, 1.2);
         const angle = p.random(0, p.TWO_PI);
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
 
         currentLineWords.push({
           word,
-          x,
+          // Calculate random position with horizontal order maintained
+          x: spacing * (index + 0.5) + p.random(-spacing * 0.3, spacing * 0.3),
           y: currentY,
-          size,
-          vx,
-          vy,
+          size: p.random(30, 80), // Random size between 30px and 80px
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
           opacity: 0, // Start with 0 opacity for fade-in
         });
       });
     }
+  };
+
+  // Helper to draw a pattern
+  const drawPattern = (element: CollageImage, patternType: string) => {
+    p.push();
+    p.noFill();
+    p.stroke(
+      element.borderColor?.[0] || 0,
+      element.borderColor?.[1] || 0,
+      element.borderColor?.[2] || 0,
+      element.opacity * 0.7,
+    );
+    p.strokeWeight(1);
+
+    const size = Math.min(element.width, element.height);
+    const halfSize = size / 2;
+    const spacing = size / 8;
+
+    const patterns: Record<string, () => void> = {
+      dots: () => {
+        for (let x = -halfSize; x <= halfSize; x += spacing) {
+          for (let y = -halfSize; y <= halfSize; y += spacing) {
+            p.point(x, y);
+          }
+        }
+      },
+      lines: () => {
+        for (let i = -halfSize; i <= halfSize; i += spacing) {
+          p.line(-halfSize, i, halfSize, i);
+          p.line(i, -halfSize, i, halfSize);
+        }
+      },
+      cross: () => {
+        for (let i = -size; i <= size; i += spacing) {
+          p.line(i, -size, i + size, size);
+          p.line(i, size, i + size, -size);
+        }
+      },
+      zigzag: () => {
+        p.beginShape();
+        for (let x = -halfSize; x <= halfSize; x += spacing) {
+          p.vertex(x, (x / spacing) % 2 === 0 ? halfSize / 4 : -halfSize / 4);
+        }
+        p.endShape();
+      },
+    };
+
+    patterns[patternType]?.();
+
+    p.pop();
   };
 
   // Draw patterns and apply filters - combined function
@@ -599,68 +657,71 @@ const sketch = (p: P5CanvasInstance) => {
     }
     // Draw pattern if specified
     else if (element.hasPattern && element.patternType) {
-      const size = Math.min(element.width, element.height);
-      const halfSize = size / 2;
-      const spacing = size / 8;
+      drawPattern(element, element.patternType);
+    }
+  };
 
-      p.push();
+  // Draw border for a shape
+  const drawShapeBorder = (element: CollageImage, opacity: number = 255) => {
+    if (element.hasBorder && element.borderWidth && element.borderColor) {
       p.noFill();
       p.stroke(
-        element.borderColor?.[0] || 0,
-        element.borderColor?.[1] || 0,
-        element.borderColor?.[2] || 0,
-        element.opacity * 0.7,
+        element.borderColor[0],
+        element.borderColor[1],
+        element.borderColor[2],
+        opacity,
       );
-      p.strokeWeight(1);
-
-      switch (element.patternType) {
-        case 'dots':
-          for (let x = -halfSize; x <= halfSize; x += spacing) {
-            for (let y = -halfSize; y <= halfSize; y += spacing) {
-              p.point(x, y);
-            }
-          }
-          break;
-        case 'lines':
-          for (let i = -halfSize; i <= halfSize; i += spacing) {
-            p.line(-halfSize, i, halfSize, i);
-            p.line(i, -halfSize, i, halfSize);
-          }
-          break;
-        case 'cross':
-          for (let i = -size; i <= size; i += spacing) {
-            p.line(i, -size, i + size, size);
-            p.line(i, size, i + size, -size);
-          }
-          break;
-        case 'zigzag':
-          p.beginShape();
-          for (let x = -halfSize; x <= halfSize; x += spacing) {
-            p.vertex(x, (x / spacing) % 2 === 0 ? halfSize / 4 : -halfSize / 4);
-          }
-          p.endShape();
-          break;
-      }
-      p.pop();
+      p.strokeWeight(element.borderWidth);
+      p.beginShape();
+      element.maskPoints.forEach((point) => {
+        p.vertex(point.x - element.x, point.y - element.y);
+      });
+      p.endShape(p.CLOSE);
     }
+  };
+
+  // Helper to draw a single decorative letter
+  const drawDecorativeLetter = (
+    letter: DecorativeLetter,
+    opacityFactor: number = 1,
+  ) => {
+    p.push();
+    p.translate(letter.x, letter.y);
+    p.rotate(letter.rotation);
+    // Apply opacity factor to color
+    p.fill(
+      letter.color[0],
+      letter.color[1],
+      letter.color[2],
+      letter.color[3] * opacityFactor,
+    );
+    p.textSize(letter.size);
+    p.text(letter.char, 0, 0);
+    p.pop();
+  };
+
+  // Calculate crossfade progress
+  const getCrossfadeProgress = () => {
+    const currentTime = p.millis();
+    if (!isCrossfading) return 1;
+
+    const progress =
+      (currentTime - crossfadeStartTime) / CONFIG.crossfadeDuration;
+    const constrainedProgress = p.constrain(progress, 0, 1);
+
+    // Handle crossfade completion
+    if (progress >= 1) {
+      isCrossfading = false;
+      previousCollageElements = [];
+      previousDecorativeLetters = [];
+    }
+
+    return constrainedProgress;
   };
 
   // Draw collage elements with crossfade
   const drawCollageElements = () => {
-    const currentTime = p.millis();
-    let crossfadeProgress = 0;
-
-    if (isCrossfading) {
-      // Calculate crossfade progress
-      crossfadeProgress =
-        (currentTime - crossfadeStartTime) / CROSSFADE_DURATION;
-      if (crossfadeProgress >= 1) {
-        // Crossfade complete
-        isCrossfading = false;
-        previousCollageElements = [];
-        crossfadeProgress = 1;
-      }
-    }
+    const crossfadeProgress = getCrossfadeProgress();
 
     // Draw previous collage elements with fading opacity
     if (isCrossfading && previousCollageElements.length > 0) {
@@ -670,31 +731,14 @@ const sketch = (p: P5CanvasInstance) => {
         p.push();
         p.translate(element.x, element.y);
         p.rotate(element.rotation);
-
         // Adjust opacity for fade out
         if (element.opacity !== undefined) {
           element.opacity = element.opacity * fadeOutOpacity;
         }
-
         // Draw content
         drawElementContent(element);
-
-        // Draw border if specified with reduced opacity
-        if (element.hasBorder && element.borderWidth && element.borderColor) {
-          p.noFill();
-          p.stroke(
-            element.borderColor[0],
-            element.borderColor[1],
-            element.borderColor[2],
-            fadeOutOpacity * 255,
-          );
-          p.strokeWeight(element.borderWidth);
-          p.beginShape();
-          element.maskPoints.forEach((point) => {
-            p.vertex(point.x - element.x, point.y - element.y);
-          });
-          p.endShape(p.CLOSE);
-        }
+        // Draw border with reduced opacity
+        drawShapeBorder(element, fadeOutOpacity * 255);
 
         p.pop();
       });
@@ -711,30 +755,13 @@ const sketch = (p: P5CanvasInstance) => {
       if (isCrossfading) {
         element.opacity = originalOpacity * crossfadeProgress;
       }
-
       // Draw content
       drawElementContent(element);
-
       // Restore original opacity
       element.opacity = originalOpacity;
-
-      // Draw border if specified
-      if (element.hasBorder && element.borderWidth && element.borderColor) {
-        p.noFill();
-        const borderOpacity = isCrossfading ? crossfadeProgress * 255 : 255;
-        p.stroke(
-          element.borderColor[0],
-          element.borderColor[1],
-          element.borderColor[2],
-          borderOpacity,
-        );
-        p.strokeWeight(element.borderWidth);
-        p.beginShape();
-        element.maskPoints.forEach((point) => {
-          p.vertex(point.x - element.x, point.y - element.y);
-        });
-        p.endShape(p.CLOSE);
-      }
+      // Draw border
+      const borderOpacity = isCrossfading ? crossfadeProgress * 255 : 255;
+      drawShapeBorder(element, borderOpacity);
 
       p.pop();
     });
@@ -744,15 +771,7 @@ const sketch = (p: P5CanvasInstance) => {
   const drawDecorativeLetters = () => {
     if (!bodoniFont) return;
 
-    const currentTime = p.millis();
-    let crossfadeProgress = 0;
-
-    if (isCrossfading) {
-      // Calculate crossfade progress
-      crossfadeProgress =
-        (currentTime - crossfadeStartTime) / CROSSFADE_DURATION;
-      crossfadeProgress = p.constrain(crossfadeProgress, 0, 1);
-    }
+    const crossfadeProgress = getCrossfadeProgress();
 
     p.push();
     p.textFont(bodoniFont);
@@ -762,64 +781,21 @@ const sketch = (p: P5CanvasInstance) => {
     // Draw previous decorative letters with fading opacity
     if (isCrossfading && previousDecorativeLetters.length > 0) {
       const fadeOutOpacity = 1 - crossfadeProgress;
-
-      previousDecorativeLetters.forEach((letter) => {
-        p.push();
-        p.translate(letter.x, letter.y);
-        p.rotate(letter.rotation);
-        // Apply fade out to color
-        p.fill(
-          letter.color[0],
-          letter.color[1],
-          letter.color[2],
-          letter.color[3] * fadeOutOpacity,
-        );
-        p.textSize(letter.size);
-        p.text(letter.char, 0, 0);
-        p.pop();
-      });
+      previousDecorativeLetters.forEach((letter) =>
+        drawDecorativeLetter(letter, fadeOutOpacity),
+      );
     }
 
     // Draw current decorative letters with fading in opacity
-    decorativeLetters.forEach((letter) => {
-      p.push();
-      p.translate(letter.x, letter.y);
-      p.rotate(letter.rotation);
-      // Apply fade in if crossfading
-      const opacity = isCrossfading
-        ? letter.color[3] * crossfadeProgress
-        : letter.color[3];
-      p.fill(letter.color[0], letter.color[1], letter.color[2], opacity);
-      p.textSize(letter.size);
-      p.text(letter.char, 0, 0);
-      p.pop();
-    });
+    decorativeLetters.forEach((letter) =>
+      drawDecorativeLetter(letter, isCrossfading ? crossfadeProgress : 1),
+    );
 
     p.pop();
   };
 
-  // Unified crossfade progress calculation
-  const getCrossfadeProgress = () => {
-    const currentTime = p.millis();
-    if (!isCrossfading) return 1;
-
-    const progress = (currentTime - crossfadeStartTime) / CROSSFADE_DURATION;
-    return p.constrain(progress, 0, 1);
-  };
-
-  // Draw the canvas - changed to only redraw when needed
-  p.draw = () => {
-    // Only redraw if needed (reduces WebGL context usage)
-    if (!needsUpdate && p.millis() - lastRenderTime < 1000) {
-      return;
-    }
-
-    lastRenderTime = p.millis();
-    needsUpdate = false;
-
-    p.background(245);
-
-    // Draw background grid
+  // Draw background grid and decorative elements
+  const drawBackground = () => {
     p.push();
     p.stroke(200, 200, 200, 15);
     p.strokeWeight(0.5);
@@ -834,11 +810,11 @@ const sketch = (p: P5CanvasInstance) => {
     p.stroke(200, 200, 200, 10);
     p.strokeWeight(1);
 
-    const elementCount = 7.5; // CONFIG.shapeVariety * 1.5 = 7.5
+    const elementCount = CONFIG.shapeVariety * 1.5;
     for (let i = 0; i < elementCount; i++) {
       const x = p.random(p.width);
       const y = p.random(p.height);
-      const size = p.random(50, 200); // shapeVariety is 5, which is >= 4
+      const size = p.random(50, 200);
 
       // Draw random shape
       const shapeType = Math.floor(p.random(3));
@@ -848,11 +824,21 @@ const sketch = (p: P5CanvasInstance) => {
       else p.line(x, y, p.random(p.width), p.random(p.height));
     }
     p.pop();
+  };
 
-    // Draw collage elements with crossfade
+  p.draw = () => {
+    // Only redraw if needed (reduces WebGL context usage)
+    if (!needsUpdate && p.millis() - lastRenderTime < 1000) {
+      return;
+    }
+
+    lastRenderTime = p.millis();
+    needsUpdate = false;
+
+    p.background(245);
+
+    drawBackground();
     drawCollageElements();
-
-    // Draw decorative letters with crossfade
     drawDecorativeLetters();
 
     // Update and draw poem line words
@@ -879,10 +865,10 @@ const sketch = (p: P5CanvasInstance) => {
         // When not crossfading, check if we're near the end of display time
         // Delay fade out until very close to the end - only fade during the last 20% of the remaining time
         const timeRemaining =
-          DISPLAY_DURATION - (currentTime - lastLineChangeTime);
-        if (timeRemaining < CROSSFADE_DURATION * 0.2) {
+          CONFIG.displayDuration - (currentTime - lastLineChangeTime);
+        if (timeRemaining < CONFIG.crossfadeDuration * 0.2) {
           // Fade out during last part of display time
-          wordOpacityFactor = timeRemaining / (CROSSFADE_DURATION * 0.2);
+          wordOpacityFactor = timeRemaining / (CONFIG.crossfadeDuration * 0.2);
           wordOpacityFactor = p.constrain(wordOpacityFactor, 0, 1);
         }
       }
@@ -911,11 +897,7 @@ const sketch = (p: P5CanvasInstance) => {
           word.vy = -Math.abs(word.vy);
         }
 
-        // Set opacity based on the unified crossfade progress
-        word.opacity = 220 * wordOpacityFactor;
-
-        // Draw the word with calculated opacity
-        p.fill(KAHU_BLUE[0], KAHU_BLUE[1], KAHU_BLUE[2], word.opacity);
+        p.fill(...KAHU_BLUE);
         p.textSize(word.size);
         p.text(word.word, word.x, word.y);
       });
@@ -925,17 +907,9 @@ const sketch = (p: P5CanvasInstance) => {
 
     // Check if it's time to update the line
     const currentTime = p.millis();
-    if (currentTime - lastLineChangeTime > DISPLAY_DURATION) {
+    if (currentTime - lastLineChangeTime > CONFIG.displayDuration) {
       currentLineIndex = (currentLineIndex + 1) % poemLines.length;
-      // Set crossfade start time to match the line change time
-      crossfadeStartTime = currentTime;
-      isCrossfading = true;
-      // Regenerate collage and decorative elements when text changes
-      generateCollage();
-      generateDecorativeLetters();
-      generatePoemLineDisplay();
-      lastLineChangeTime = currentTime;
-      needsUpdate = true;
+      startCrossfade();
     } else {
       // Always need to update during crossfading or for word movement
       needsUpdate = isCrossfading || currentLineWords.length > 0;
@@ -957,23 +931,16 @@ const sketch = (p: P5CanvasInstance) => {
     }
 
     if (isInitialized) {
-      generateCollage();
-      generateDecorativeLetters();
-      generatePoemLineDisplay();
-      needsUpdate = true;
+      startCrossfade();
     }
   };
 
   // Regenerate collage when clicked
   p.mouseClicked = () => {
-    generateCollage();
-    generateDecorativeLetters();
-    generatePoemLineDisplay();
-    needsUpdate = true;
+    startCrossfade();
   };
 };
 
-// React component for the collage canvas with proper resource management
-const CollageCanvas = () => <ReactP5Wrapper sketch={sketch} />;
+const TowardsCanvas = () => <ReactP5Wrapper sketch={sketch} />;
 
-export default CollageCanvas;
+export default TowardsCanvas;
