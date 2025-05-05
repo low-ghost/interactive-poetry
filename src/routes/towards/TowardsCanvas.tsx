@@ -11,8 +11,8 @@ const CONFIG = {
   maxSize: 70,
   maxPolygonSides: 7,
   shapeVariety: 5,
-  crossfadeDuration: 6000, // 6 seconds for crossfade
-  displayDuration: 10000, // Total display time per line
+  crossfadeDuration: 2500, // 2.5 seconds for crossfade
+  displayDuration: 8000, // Total display time per line
 };
 
 type ShapeType = 'basic' | 'polygon' | 'custom' | 'chaotic';
@@ -897,7 +897,9 @@ const sketch = (p: P5CanvasInstance) => {
           word.vy = -Math.abs(word.vy);
         }
 
-        p.fill(...KAHU_BLUE);
+        // Apply opacity factor to color when crossfading
+        word.opacity = wordOpacityFactor * 220;
+        p.fill(KAHU_BLUE[0], KAHU_BLUE[1], KAHU_BLUE[2], word.opacity);
         p.textSize(word.size);
         p.text(word.word, word.x, word.y);
       });
