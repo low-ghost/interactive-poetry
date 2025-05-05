@@ -97,7 +97,7 @@ const sketch = (p: P5CanvasInstance) => {
     p.imageMode(p.CENTER);
     p.colorMode(p.RGB);
     p.textFont(bodoniFont);
-    p.frameRate(30); // Lower framerate to reduce resource usage
+    p.frameRate(24); // Lower framerate to reduce resource usage
     // Create shared maskGraphic once
     sharedMaskGraphic = p.createGraphics(width, height);
     generate();
