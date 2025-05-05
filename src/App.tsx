@@ -35,6 +35,12 @@ const router = createHashRouter(
             Component: (await import('./routes/forest/ForestPage')).default,
           })}
         />
+        <Route
+          path="collage"
+          lazy={async () => ({
+            Component: (await import('./routes/collage/CollagePage')).default,
+          })}
+        />
       </Route>
       <Route
         path="*"

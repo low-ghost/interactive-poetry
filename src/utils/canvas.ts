@@ -33,15 +33,10 @@ export const improveTextRendering = <T extends {}>(p: P5CanvasInstance<T>) => {
 
   // Set higher quality for text rendering
   if (p.drawingContext) {
-    try {
-      // Attempt to set canvas context properties for better text
-      const ctx = p.drawingContext as CanvasRenderingContext2D;
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.textRendering = 'geometricPrecision';
-    } catch (e) {
-      // Ignore errors if properties are not supported
-      console.error('Error setting canvas context properties:', e);
-    }
+    // Set canvas context properties for better text
+    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.textRendering = 'geometricPrecision';
   }
 };

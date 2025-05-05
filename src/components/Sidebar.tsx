@@ -4,6 +4,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Home,
+  Image,
   Moon,
   MousePointer,
   Sun,
@@ -32,6 +33,11 @@ const navigationConfig = [
     path: AppRoutes.FOREST,
     label: 'Forest',
     icon: <TreePine size={24} />,
+  },
+  {
+    path: AppRoutes.COLLAGE,
+    label: 'Generative Collage',
+    icon: <Image size={24} />,
   },
 ];
 
