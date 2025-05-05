@@ -1,7 +1,7 @@
 import imageUrls from '@constants/image_urls.json';
 import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { getCanvasSize } from '@utils/canvas';
-import { KAHU_BLUE, createRandomColor } from '@utils/color';
+import { KAHU_BLUE, createRandomColorArray } from '@utils/color';
 import { Position2D } from '@utils/math';
 import { Font, Graphics, Image } from 'p5';
 import { POEM } from './poem';
@@ -15,10 +15,8 @@ const CONFIG = {
 
 type ShapeType = 'basic' | 'polygon' | 'custom' | 'chaotic';
 
-type CollageImage = {
+type CollageImage = Position2D & {
   url: string;
-  x: number;
-  y: number;
   width: number;
   height: number;
   opacity: number;
@@ -26,37 +24,30 @@ type CollageImage = {
   maskPoints: Position2D[];
   imageIndex: number;
   shapeType: ShapeType;
-  // Optional properties
+
   maskSides?: number;
   filterType?: string;
   hasBorder?: boolean;
   borderWidth?: number;
-  borderColor?: number[];
+  borderColor?: readonly [number, number, number];
   zIndex?: number;
   hasPattern?: boolean;
   patternType?: string;
+};
+
+type DecorativeLetter = Position2D & {
+  char: string;
+  size: number;
+  rotation: number;
+  color: readonly [number, number, number, number];
 };
 
 const sketch = (p: P5CanvasInstance) => {
   let loadedImages: Image[] = [];
   let collageElements: CollageImage[] = [];
   let previousCollageElements: CollageImage[] = []; // Store previous collage for crossfade
-  let decorativeLetters: {
-    char: string;
-    x: number;
-    y: number;
-    size: number;
-    rotation: number;
-    color: number[];
-  }[] = [];
-  let previousDecorativeLetters: {
-    char: string;
-    x: number;
-    y: number;
-    size: number;
-    rotation: number;
-    color: number[];
-  }[] = []; // Store previous decorative letters
+  let decorativeLetters: DecorativeLetter[] = [];
+  let previousDecorativeLetters: DecorativeLetter[] = []; // Store previous decorative letters
   let bodoniFont: Font;
   let isInitialized = false;
   let sharedMaskGraphic: Graphics;
@@ -81,25 +72,7 @@ const sketch = (p: P5CanvasInstance) => {
     opacity: number; // opacity for fading
   }> = [];
 
-  const decorativeChars = [
-    'A',
-    'B',
-    'F',
-    'O',
-    'R',
-    'S',
-    'T',
-    '.',
-    ',',
-    ';',
-    '!',
-    '?',
-    '&',
-    '[',
-    ']',
-    '{',
-    '}',
-  ];
+  const decorativeChars = 'TOWARDS;!?&[]{}';
 
   p.preload = () => {
     // Load subset of images
@@ -129,25 +102,12 @@ const sketch = (p: P5CanvasInstance) => {
     needsUpdate = true;
   };
 
-  // Helper function to get random color as RGB array
-  const getRandomColorArray = (): number[] => {
-    const c = createRandomColor(p);
-    return [
-      Math.floor(p.red(c)),
-      Math.floor(p.green(c)),
-      Math.floor(p.blue(c)),
-    ];
-  };
-
-  // Generate a new collage
   const generateCollage = () => {
     const [width, height] = getCanvasSize(p);
 
     // Store current collage elements for crossfade if we have any
     if (collageElements.length > 0) {
       previousCollageElements = [...collageElements];
-      // Note: We now set crossfadeStartTime and isCrossfading in the line change code
-      // to ensure synchronization with text changes
     }
 
     collageElements = [];
@@ -202,8 +162,8 @@ const sketch = (p: P5CanvasInstance) => {
       // Calculate size and position
       const aspectRatio = img.width / img.height;
       const sizeVariance = CONFIG.shapeVariety * 5;
-      const minSizeAdjusted = Math.max(10, CONFIG.minSize - sizeVariance);
-      const maxSizeAdjusted = Math.min(95, CONFIG.maxSize + sizeVariance);
+      const minSizeAdjusted = CONFIG.minSize - sizeVariance; // 40 - 25 = 15
+      const maxSizeAdjusted = CONFIG.maxSize + sizeVariance; // 70 + 25 = 95
 
       const imgWidth =
         (width *
@@ -217,10 +177,7 @@ const sketch = (p: P5CanvasInstance) => {
 
       // Randomize appearance
       const opacity = (p.random(30, 90) / 100) * 255;
-      const rotation = p.random(
-        0,
-        p.TWO_PI * Math.min(1, CONFIG.shapeVariety / 5),
-      );
+      const rotation = p.random(0, p.TWO_PI);
 
       // Select shape type
       const shapeType: ShapeType =
@@ -281,7 +238,7 @@ const sketch = (p: P5CanvasInstance) => {
         filterTypes[Math.floor(p.random(0, filterTypes.length))];
 
       const hasBorder = p.random() < 0.3;
-      const hasPattern = CONFIG.shapeVariety > 2 && p.random() < 0.5;
+      const hasPattern = p.random() < 0.5;
 
       // Add to collage elements
       collageElements.push({
@@ -298,8 +255,8 @@ const sketch = (p: P5CanvasInstance) => {
         shapeType,
         filterType,
         hasBorder,
-        borderWidth: hasBorder ? p.random(1, 5) : 0,
-        borderColor: hasBorder ? getRandomColorArray() : [0, 0, 0],
+        borderWidth: hasBorder ? p.random(0.5, 2) : 0,
+        borderColor: hasBorder ? createRandomColorArray(p) : [0, 0, 0],
         zIndex: Math.floor(p.random(0, 10)),
         hasPattern,
         patternType: hasPattern
@@ -308,51 +265,48 @@ const sketch = (p: P5CanvasInstance) => {
       });
     }
 
-    // Add decorative elements conditionally
-    if (CONFIG.shapeVariety >= 4) {
-      // Add decorative elements
-      const numElements = Math.floor(CONFIG.shapeVariety * 0.8);
+    // Add decorative elements
+    const numElements = Math.floor(4);
 
-      for (let i = 0; i < numElements; i++) {
-        const x = p.random(width);
-        const y = p.random(height);
-        const size = p.random(30, 80);
-        const rotation = p.random(0, p.TWO_PI);
-        const shapeType: ShapeType = p.random() < 0.5 ? 'basic' : 'custom';
-        const hasPattern = p.random() < 0.9;
+    for (let i = 0; i < numElements; i++) {
+      const x = p.random(width);
+      const y = p.random(height);
+      const size = p.random(30, 80);
+      const rotation = p.random(0, p.TWO_PI);
+      const shapeType: ShapeType = p.random() < 0.5 ? 'basic' : 'custom';
+      const hasPattern = p.random() < 0.9;
 
-        collageElements.push({
-          url: '',
+      collageElements.push({
+        url: '',
+        x,
+        y,
+        width: size,
+        height: size,
+        opacity: (p.random(40, 100) / 100) * 255,
+        rotation,
+        maskPoints: generateShape(
           x,
           y,
-          width: size,
-          height: size,
-          opacity: (p.random(40, 100) / 100) * 255,
-          rotation,
-          maskPoints: generateShape(
-            x,
-            y,
-            size,
-            size,
-            shapeType,
-            shapeType === 'basic'
-              ? p.random() < 0.5
-                ? 'circle'
-                : 'ellipse'
-              : undefined,
-          ),
-          imageIndex: -1,
+          size,
+          size,
           shapeType,
-          hasBorder: true,
-          borderWidth: p.random(1, 3),
-          borderColor: getRandomColorArray(),
-          zIndex: Math.floor(p.random(0, 10)),
-          hasPattern,
-          patternType: hasPattern
-            ? ['dots', 'lines', 'cross', 'zigzag'][Math.floor(p.random(0, 4))]
-            : '',
-        });
-      }
+          shapeType === 'basic'
+            ? p.random() < 0.5
+              ? 'circle'
+              : 'ellipse'
+            : undefined,
+        ),
+        imageIndex: -1,
+        shapeType,
+        hasBorder: true,
+        borderWidth: p.random(1, 3),
+        borderColor: createRandomColorArray(p),
+        zIndex: Math.floor(p.random(0, 10)),
+        hasPattern,
+        patternType: hasPattern
+          ? ['dots', 'lines', 'cross', 'zigzag'][Math.floor(p.random(0, 4))]
+          : '',
+      });
     }
 
     // Sort by z-index
@@ -500,8 +454,7 @@ const sketch = (p: P5CanvasInstance) => {
 
     decorativeLetters = [];
 
-    // Adjust letter count based on shape variety
-    const letterCount = Math.floor(p.random(3, 5 + CONFIG.shapeVariety));
+    const letterCount = Math.floor(p.random(3, 10));
 
     // One large letter
     decorativeLetters.push({
@@ -881,17 +834,17 @@ const sketch = (p: P5CanvasInstance) => {
     p.stroke(200, 200, 200, 10);
     p.strokeWeight(1);
 
-    const elementCount = CONFIG.shapeVariety * 1.5;
+    const elementCount = 7.5; // CONFIG.shapeVariety * 1.5 = 7.5
     for (let i = 0; i < elementCount; i++) {
       const x = p.random(p.width);
       const y = p.random(p.height);
-      const size = p.random(50, CONFIG.shapeVariety >= 4 ? 200 : 100);
+      const size = p.random(50, 200); // shapeVariety is 5, which is >= 4
 
       // Draw random shape
       const shapeType = Math.floor(p.random(3));
       if (shapeType === 0) p.ellipse(x, y, size, size);
-      else if (shapeType === 1 && CONFIG.shapeVariety >= 4)
-        p.rect(x - size / 2, y - size / 2, size, size);
+      else if (shapeType === 1) p.rect(x - size / 2, y - size / 2, size, size);
+      // No need to check shapeVariety >= 4
       else p.line(x, y, p.random(p.width), p.random(p.height));
     }
     p.pop();

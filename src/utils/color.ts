@@ -1,13 +1,13 @@
 import { P5CanvasInstance } from '@p5-wrapper/react';
 
+export const createRandomColorArray = <T extends {}>(p: P5CanvasInstance<T>) =>
+  [p.random(255), p.random(255), p.random(255)] as const;
+
 /**
  * Creates a random color, using 0-255 for each channel.
- *
- * @param p - The p5 instance.
- * @returns A random color.
  */
 export const createRandomColor = <T extends {}>(p: P5CanvasInstance<T>) =>
-  p.color(p.random(255), p.random(255), p.random(255));
+  p.color(...createRandomColorArray(p));
 
 /**
  * Different shades of green for a forest
