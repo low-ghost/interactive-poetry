@@ -77,6 +77,15 @@ canvasInstanceRef.current?.updateWithProps?.(
 
 ---
 
+## Bergson's Concept of Lived Duration
+
+- Henri Bergson's philosophy contrasts subjective, lived time with objective, scientific time
+- "Duration" is a continuous, flowing, and indivisible experience, intertwined with consciousness and memory
+- Digital poetry can engage with this subjective experience of time
+- User interactions can influence the pace and unfolding of a poem
+
+---
+
 <style scoped>
 section{font-size: 1.9em}
 </style>
@@ -173,19 +182,14 @@ section{font-size: 1.5em}
 
 ---
 
-## Bergson's Concept of Lived Duration
+<style scoped>
+section{font-size: 2em}
+</style>
 
-- Henri Bergson's philosophy contrasts subjective, lived time with objective, scientific time.
-- "Duration" is a continuous, flowing, and indivisible experience, intertwined with consciousness and memory.
-- Digital poetry can engage with this subjective experience of time.
-- User interactions can influence the pace and unfolding of a poem.
-- Computational temporality (delays, loops) can create poetic rhythms reflecting duration.
-
----
-
-## The Poetic Computer: An Instrument
+## The Poetic Computer
 
 - The computer can be an instrument for poetic composition and performance
-- Instantaneous communication, live collaboration between various readers and authors
+- Instantaneous communication, live collaboration between various readers and authors, unexpected outcomes
 - Augments human creativity, not replacing it
 - Lot of new avenues for collaborative human-computer artistic expression
+- See [github.com/low-ghost/interactive-poetry](github.com/low-ghost/interactive-poetry) for these slides, code, and links to live examples
