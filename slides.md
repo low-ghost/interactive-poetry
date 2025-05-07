@@ -73,7 +73,8 @@ canvasInstanceRef.current?.updateWithProps?.(
 
 - interaction brings out meaning in Shakespeare's Sonnet 18: "rough winds", "the eye of heaven", "By chance or nature's changing course"
 - to read is to interact, to join in a collaborative creation of meaning
-- where does the beloved of the poem become eternal? In the reader, in the 'now' of the moment of reading that encompasses also the entire culture at hand in language's net of meaning and play of signifiers
+- where does the beloved of the poem become eternal, where does the fragile immortality reside?
+- In the reader, in the 'now' of the moment of reading that encompasses also the entire culture at hand in language's net of meaning and play of signifiers
 
 ---
 
@@ -81,8 +82,7 @@ canvasInstanceRef.current?.updateWithProps?.(
 
 - Henri Bergson's philosophy contrasts subjective, lived time with objective, scientific time
 - "Duration" is a continuous, flowing, and indivisible experience, intertwined with consciousness and memory
-- Digital poetry can engage with this subjective experience of time
-- User interactions can influence the pace and unfolding of a poem
+- The act of reading when viewed through this duration is not pulling meaning out of a static text, but a collaborative creation of meaning between the reader, a community, and the author
 
 ---
 
@@ -192,4 +192,4 @@ section{font-size: 2em}
 - Instantaneous communication, live collaboration between various readers and authors, unexpected outcomes
 - Augments human creativity, not replacing it
 - Lot of new avenues for collaborative human-computer artistic expression
-- See [github.com/low-ghost/interactive-poetry](github.com/low-ghost/interactive-poetry) for these slides, code, and links to live examples
+- See [github.com/low-ghost/interactive-poetry](https://github.com/low-ghost/interactive-poetry) for these slides, code, and links to live examples
