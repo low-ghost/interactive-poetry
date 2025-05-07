@@ -6,13 +6,13 @@
   "homepage": "https://low-ghost.github.io/interactive-poetry",
   "scripts": {
     "dev": "vite",
-    "build": "npm run slides && tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run slides",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "slides": "marp slides.md --html --output-dir public/slides && cp -r images public/slides/"
+    "slides": "mkdir -p dist/slides && npx @marp-team/marp-cli slides.md --html -o dist/slides/slides.html && cp -r images dist/slides/"
   },
   "dependencies": {
     "@p5-wrapper/react": "^4.4.2",
