@@ -9,6 +9,7 @@ const SimpleDemoPage = () => (
     description="Interact with the canvas below by moving your mouse over it."
     githubLink="routes/simple-demo/SimpleDemoCanvas.tsx"
     CanvasComponent={LazySimpleDemoCanvas}
+    slideExampleNumber={1}
   />
 );
 

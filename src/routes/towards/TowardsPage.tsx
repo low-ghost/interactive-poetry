@@ -9,6 +9,7 @@ const TowardsPage = () => (
     description="An generative collage that and animated poem. Watch for changes or click to generate a new background."
     githubLink="routes/towards/TowardsCanvas.tsx"
     CanvasComponent={LazyTowardsCanvas}
+    slideExampleNumber={4}
   />
 );
 

@@ -9,6 +9,7 @@ const RipplePage = () => (
     description="Interact with the canvas to create ripple effects. Click to create a color burst."
     githubLink="routes/ripple/RippleCanvas.tsx"
     CanvasComponent={LazyRippleCanvas}
+    slideExampleNumber={2}
   />
 );
 

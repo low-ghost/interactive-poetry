@@ -63,7 +63,7 @@ canvasInstanceRef.current?.updateWithProps?.(
 
 ---
 
-### Interpretation
+### Ripple Interpretation
 
 - interaction brings out meaning in Shakespeare's Sonnet 18: "rough winds", "the eye of heaven", "By chance or nature's changing course"
 - to read is to interact, to join in a collaborative creation of meaning
@@ -72,14 +72,38 @@ canvasInstanceRef.current?.updateWithProps?.(
 ---
 
 <style scoped>
-section{font-size: 2.4em}
+section{font-size: 1.9em}
 </style>
 
-### Code
+### Ripple Code
 
-- has a lot of circular logic, `p.sin`, `p.cos`, `p.atan2` for 2 argument archtangent etc.
+- has a lot of trig logic, `p.sin`, `p.cos`, `p.atan2` (for 2 argument archtangent to get the angle from ripple center to character position) etc.
 - `strength`: Ripple intensity. Stronger ripples displace text more.
 - `growthRate`: How quickly the `radius` increases in each frame of the animation.
 - `decayRate`: How quickly the `strength` fades over time. A value slightly less than 1 (e.g., 0.95) means the strength decreases by 5% each frame.
 - `amplitude`: Controls the maximum displacement distance of the text affected by the ripple. Think of it like the height of a water wave.
 - [createRandomColor](https://github.com/low-ghost/interactive-poetry/blob/main/src/utils/color.ts#L3-L10) generates random rgb values via 3 calls to `p.random(255)`
+
+---
+
+<style scoped>
+section{font-size: 1.75em}
+img{margin-top:20px}
+</style>
+
+## Example 3: [Forest](https://low-ghost.github.io/interactive-poetry/#/forest)
+
+Typographical experiment, precursor to my multimedia, experimental translation of Gilgamesh. Started out as vector art, randomness mimicked via copy/paste of t's (click for fullscreen)
+
+<a href="images/forest-original.jpg">
+  <img src="images/forest-original.jpg" width="450">
+</a>
+
+---
+
+### Forest Philosophy
+
+- Trees are distributed according to various algorithms including Perlin noise and actual studies on forest distributions
+- Represents a Deleuzian becoming-forest
+- Trees sway to replicate the wind
+- A data visualization of that which is at the border of what can be visualized or even conceptualized, a dream data vis
