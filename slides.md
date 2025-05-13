@@ -71,10 +71,10 @@ canvasInstanceRef.current?.updateWithProps?.(
 
 ### Ripple Interpretation
 
-- interaction brings out meaning in Shakespeare's Sonnet 18: "rough winds", "the eye of heaven", "By chance or nature's changing course"
-- to read is to interact, to join in a collaborative creation of meaning
-- where does the beloved of the poem become eternal, where does the fragile immortality reside?
+- Interaction + Shakespeare's Sonnet 18: fun connections like "rough winds", "the eye of heaven", "By chance or nature's changing course"
+- About how writing feigns an immortality. But where does the beloved of the poem become eternal?
 - In the reader, in the 'now' of the moment of reading that encompasses also the entire culture at hand in language's net of meaning and play of signifiers
+- to read is to interact, to join in a collaborative creation of meaning
 
 ---
 

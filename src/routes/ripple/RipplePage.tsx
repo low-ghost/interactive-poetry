@@ -5,7 +5,7 @@ const LazyRippleCanvas = lazy(() => import('./RippleCanvas'));
 
 const RipplePage = () => (
   <GenericCanvasPage
-    title="P5.js Ripple Effect"
+    title="Ripple"
     description="Interact with the canvas to create ripple effects. Click to create a color burst."
     githubLink="routes/ripple/RippleCanvas.tsx"
     CanvasComponent={LazyRippleCanvas}
