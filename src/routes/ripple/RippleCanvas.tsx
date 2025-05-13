@@ -45,7 +45,7 @@ type SketchProps = {
   text: string | null;
 };
 
-const sketch = (p: P5CanvasInstance<SketchProps>) => {
+export const sketch = (p: P5CanvasInstance<SketchProps>) => {
   let cols: number;
   let rows: number;
   let chars: string[][];

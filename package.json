@@ -19,6 +19,7 @@
   "dependencies": {
     "@p5-wrapper/react": "^4.4.2",
     "@types/ramda": "^0.30.2",
+    "framer-motion": "^12.11.0",
     "lucide-react": "^0.503.0",
     "mathjs": "^14.4.0",
     "p5": "^2.0.0",

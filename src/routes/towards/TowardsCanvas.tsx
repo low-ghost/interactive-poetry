@@ -42,7 +42,7 @@ const selectRandomBasicShape = (p: P5CanvasInstance): BasicShape =>
 const selectRandomPatternType = (p: P5CanvasInstance): PatternType =>
   p.random(Object.values(PatternType));
 
-const sketch = (p: P5CanvasInstance) => {
+export const sketch = (p: P5CanvasInstance) => {
   let loadedImages: Image[] = [];
   let collageElements: CollageElement[] = [];
   let previousCollageElements: CollageElement[] = []; // Store previous collage for crossfade

@@ -44,7 +44,7 @@ type ForestControls = typeof DEFAULT_CONTROLS;
 
 type P5ForestInstance = P5CanvasInstance<ForestControls>;
 
-const sketch = (p: P5ForestInstance) => {
+export const sketch = (p: P5ForestInstance) => {
   // Use the default controls object for initial state
   const state = { ...DEFAULT_CONTROLS };
 

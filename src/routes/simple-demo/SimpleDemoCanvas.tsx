@@ -2,7 +2,7 @@ import { P5CanvasInstance, ReactP5Wrapper } from '@p5-wrapper/react';
 import { getCanvasSize } from '@utils/canvas';
 import { useState } from 'react';
 
-const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
+export const sketch = (p: P5CanvasInstance<{ cursorColor: number }>) => {
   let cursorColor = 100;
 
   p.setup = () => {
