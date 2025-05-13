@@ -112,8 +112,7 @@ const sketch = (p: P5CanvasInstance) => {
     if (!img?.width) return undefined;
 
     try {
-      // Create graphic with padding
-      const gfx = p.createGraphics(element.width * 1.5, element.height * 1.5);
+      const gfx = p.createGraphics(element.width, element.height);
 
       // Set up the graphic context
       gfx.translate(gfx.width / 2, gfx.height / 2);
@@ -647,25 +646,30 @@ const sketch = (p: P5CanvasInstance) => {
 
       // Update positions and opacity based on velocity vectors
       currentLineWords.forEach((word) => {
-        // Update position
-        word.x += word.vx;
-        word.y += word.vy;
+        // Calculate next position
+        const nextX = word.x + word.vx;
+        const nextY = word.y + word.vy;
 
-        // Bounce off canvas edges
-        if (word.x < word.size / 2) {
+        // Check and handle horizontal bounds
+        if (nextX < word.size / 2) {
           word.x = word.size / 2;
           word.vx = Math.abs(word.vx);
-        } else if (word.x > width - word.size / 2) {
+        } else if (nextX > width - word.size / 2) {
           word.x = width - word.size / 2;
           word.vx = -Math.abs(word.vx);
+        } else {
+          word.x = nextX;
         }
 
-        if (word.y < word.size / 2) {
+        // Check and handle vertical bounds
+        if (nextY < word.size / 2) {
           word.y = word.size / 2;
           word.vy = Math.abs(word.vy);
-        } else if (word.y > height - word.size / 2) {
+        } else if (nextY > height - word.size / 2) {
           word.y = height - word.size / 2;
           word.vy = -Math.abs(word.vy);
+        } else {
+          word.y = nextY;
         }
 
         // Apply opacity factor to color when crossfading
