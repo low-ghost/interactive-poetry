@@ -39,6 +39,11 @@ const navigationConfig = [
     label: 'Towards',
     icon: <Image size={24} />,
   },
+  {
+    path: AppRoutes.MOON,
+    label: 'Shrine of Footprints',
+    icon: <Moon size={24} />,
+  },
 ];
 
 type SidebarProps = {

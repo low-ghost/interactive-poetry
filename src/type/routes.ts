@@ -11,6 +11,7 @@ export enum AppRoutes {
   RIPPLE = '/ripple',
   FOREST = '/forest',
   TOWARDS = '/towards',
+  MOON = '/moon',
 }
 
 /**
