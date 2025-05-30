@@ -409,9 +409,14 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
         image: photo,
         width: photo.width * scale,
         height: photo.height * scale,
-        maskType: ['triangle', 'circle', 'angular', 'organic', 'diamond'][
-          Math.floor(Math.random() * 5)
-        ],
+        maskType: [
+          'triangle',
+          'polygon-rotate',
+          'angular',
+          'organic',
+          'polygon-morph',
+          'diamond',
+        ][Math.floor(Math.random() * 6)],
       },
       age: 0,
       zIndex: 6, // Photos on top
@@ -536,29 +541,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
       },
       age: 0,
       zIndex: 2,
-    };
-  };
-
-  const createOrganicMechanism = (x: number, y: number): SceneElement => {
-    return {
-      type: 'geometric-framework',
-      x,
-      y,
-      opacity: 0,
-      targetOpacity: 1.0,
-      rotation: p.random(-p.PI / 10, p.PI / 10),
-      scale: p.random(0.7, 1.4),
-      data: {
-        frameType: 'organic-mechanism',
-        size: p.random(90, 180),
-        complexity: Math.floor(p.random(4, 9)),
-        strokeWeight: p.random(1, 5),
-        color: getRandomColor(),
-        gearCount: Math.floor(p.random(3, 7)),
-        organicFlow: p.random(0.3, 0.8),
-      },
-      age: 0,
-      zIndex: 4,
     };
   };
 
@@ -1070,68 +1052,137 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     const height = element.data.height;
     const maskType = element.data.maskType;
 
-    // Add rotation animation to the mask based on element age
-    const maskRotation = element.age * 0.01; // Slow rotation
-    p.rotate(maskRotation);
+    // Different animations for different mask types
+    if (maskType === 'polygon-rotate' || maskType === 'polygon-morph') {
+      // For polygon masks: alternate between rotation and point morphing
+      const isRotating = maskType === 'polygon-rotate';
 
-    // Create clipping mask
-    p.drawingContext.save();
-    p.drawingContext.beginPath();
+      // Create clipping mask
+      p.drawingContext.save();
+      p.drawingContext.beginPath();
 
-    switch (maskType) {
-      case 'triangle':
-        p.drawingContext.moveTo(0, -height / 2);
-        p.drawingContext.lineTo(-width / 2, height / 2);
-        p.drawingContext.lineTo(width / 2, height / 2);
-        break;
+      if (isRotating) {
+        // Rotating polygon - traditional rotation
+        const rotationSpeed = element.age * 0.008; // Slow rotation
+        p.rotate(rotationSpeed);
 
-      case 'circle':
-        p.drawingContext.arc(0, 0, Math.min(width, height) / 2, 0, 2 * Math.PI);
-        break;
+        // Create regular hexagon
+        const sides = 6;
+        const radius = Math.min(width, height) / 2.2;
 
-      case 'angular':
-        p.drawingContext.moveTo(-width * 0.2, -height / 2);
-        p.drawingContext.lineTo(width / 2, -height * 0.3);
-        p.drawingContext.lineTo(width * 0.3, height / 2);
-        p.drawingContext.lineTo(-width / 2, height * 0.2);
-        p.drawingContext.lineTo(-width * 0.3, -height * 0.1);
-        break;
-
-      case 'organic':
-        for (let angle = 0; angle < p.TWO_PI; angle += p.PI / 8) {
-          const radius = Math.min(width, height) / 4;
-          const r =
-            radius * (0.6 + 0.4 * Math.sin(angle * 3 + element.age * 0.02));
-          const x = r * Math.cos(angle);
-          const y = r * Math.sin(angle);
-          if (angle === 0) {
+        for (let i = 0; i < sides; i++) {
+          const angle = (i / sides) * p.TWO_PI;
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+          if (i === 0) {
             p.drawingContext.moveTo(x, y);
           } else {
             p.drawingContext.lineTo(x, y);
           }
         }
-        break;
 
-      case 'diamond':
-        p.drawingContext.moveTo(0, -height / 2);
-        p.drawingContext.lineTo(width / 2, 0);
-        p.drawingContext.lineTo(0, height / 2);
-        p.drawingContext.lineTo(-width / 2, 0);
-        break;
+        p.drawingContext.closePath();
+        p.drawingContext.clip();
+
+        // Rotate back for the image so only the mask rotates
+        p.rotate(-rotationSpeed);
+      } else {
+        // Morphing polygon - individual points move
+        const morphTime = element.age * 0.006; // Slow morphing
+        const sides = 7; // Irregular heptagon for more interesting morphing
+        const baseRadius = Math.min(width, height) / 2.2;
+
+        for (let i = 0; i < sides; i++) {
+          const baseAngle = (i / sides) * p.TWO_PI;
+
+          // Each point moves independently with different frequencies
+          const radiusVariation = Math.sin(morphTime * (1 + i * 0.3)) * 0.25; // ±25% radius variation
+          const angleVariation = Math.cos(morphTime * (0.8 + i * 0.2)) * 0.15; // ±0.15 radian angle variation
+
+          const radius = baseRadius * (1 + radiusVariation);
+          const angle = baseAngle + angleVariation;
+
+          const x = radius * Math.cos(angle);
+          const y = radius * Math.sin(angle);
+
+          if (i === 0) {
+            p.drawingContext.moveTo(x, y);
+          } else {
+            p.drawingContext.lineTo(x, y);
+          }
+        }
+
+        p.drawingContext.closePath();
+        p.drawingContext.clip();
+      }
+
+      // Draw image within clipping mask
+      p.tint(255, element.opacity * 255);
+      p.imageMode(p.CENTER);
+      p.image(img, 0, 0, width, height);
+
+      p.drawingContext.restore();
+    } else {
+      // For non-circular masks: use slower rotation
+      const maskRotation = element.age * 0.005; // Slower rotation (reduced from 0.01)
+      p.rotate(maskRotation);
+
+      // Create clipping mask
+      p.drawingContext.save();
+      p.drawingContext.beginPath();
+
+      switch (maskType) {
+        case 'triangle':
+          p.drawingContext.moveTo(0, -height / 2);
+          p.drawingContext.lineTo(-width / 2, height / 2);
+          p.drawingContext.lineTo(width / 2, height / 2);
+          break;
+
+        case 'angular':
+          p.drawingContext.moveTo(-width * 0.2, -height / 2);
+          p.drawingContext.lineTo(width / 2, -height * 0.3);
+          p.drawingContext.lineTo(width * 0.3, height / 2);
+          p.drawingContext.lineTo(-width / 2, height * 0.2);
+          p.drawingContext.lineTo(-width * 0.3, -height * 0.1);
+          break;
+
+        case 'organic':
+          for (let angle = 0; angle < p.TWO_PI; angle += p.PI / 8) {
+            const radius = Math.min(width, height) / 4;
+            const r =
+              radius * (0.6 + 0.4 * Math.sin(angle * 3 + element.age * 0.02));
+            const x = r * Math.cos(angle);
+            const y = r * Math.sin(angle);
+            if (angle === 0) {
+              p.drawingContext.moveTo(x, y);
+            } else {
+              p.drawingContext.lineTo(x, y);
+            }
+          }
+          break;
+
+        case 'diamond':
+          p.drawingContext.moveTo(0, -height / 2);
+          p.drawingContext.lineTo(width / 2, 0);
+          p.drawingContext.lineTo(0, height / 2);
+          p.drawingContext.lineTo(-width / 2, 0);
+          break;
+      }
+
+      p.drawingContext.closePath();
+      p.drawingContext.clip();
+
+      // Rotate back for the image so only the mask rotates
+      p.rotate(-maskRotation);
+
+      // Draw image within clipping mask
+      p.tint(255, element.opacity * 255);
+      p.imageMode(p.CENTER);
+      p.image(img, 0, 0, width, height);
+
+      p.drawingContext.restore();
     }
 
-    p.drawingContext.closePath();
-    p.drawingContext.clip();
-
-    // Rotate back for the image so only the mask rotates
-    p.rotate(-maskRotation);
-
-    // Draw image within clipping mask
-    p.tint(255, element.opacity * 255);
-    p.imageMode(p.CENTER);
-    p.image(img, 0, 0, width, height);
-
-    p.drawingContext.restore();
     p.pop();
   };
 
@@ -1407,9 +1458,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
         break;
       case 'modular-grid':
         drawModularGrid(data, alpha);
-        break;
-      case 'organic-mechanism':
-        drawOrganicMechanism(data, alpha, element);
         break;
       case 'architectural-schematic':
         drawArchitecturalSchematic(data, alpha);
@@ -1741,105 +1789,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawOrganicMechanism = (
-    data: any,
-    alpha: number,
-    element?: SceneElement,
-  ) => {
-    const size = data.size;
-    const gearCount = data.gearCount;
-    const organicFlow = data.organicFlow;
-
-    // Add slow animation using element age
-    const slowTime = element ? element.age * 0.02 : 0; // Organic mechanism speed
-
-    // Create gear-like mechanical elements with organic connections
-    // Use deterministic values based on index instead of random
-    const gears = [];
-    for (let i = 0; i < gearCount; i++) {
-      // Use deterministic values instead of random to prevent flashing
-      const angle = (i / gearCount) * p.TWO_PI + ((i * 0.3) % 1) - 0.5; // Deterministic offset
-      const radius = size * (0.2 + ((i * 0.7) % 1) * 0.2); // Deterministic radius between 0.2-0.4
-      const gearRadius = 15 + ((i * 11) % 15); // Deterministic radius between 15-30
-      const teeth = Math.floor(8 + ((i * 7) % 8)); // Deterministic teeth count 8-16
-
-      gears.push({
-        x: radius * Math.cos(angle),
-        y: radius * Math.sin(angle),
-        radius: gearRadius,
-        teeth: teeth,
-        rotation: ((i * 1.618) % p.TWO_PI) + slowTime * (i % 2 === 0 ? 1 : -1), // Slow rotation, alternating direction
-      });
-    }
-
-    // Draw organic connecting curves between gears
-    p.strokeWeight(2);
-    for (let i = 0; i < gears.length; i++) {
-      for (let j = i + 1; j < gears.length; j++) {
-        // Use deterministic connection probability
-        if ((i * 7 + j * 11) % 10 < 6) {
-          // Replaces Math.random() < 0.6
-          const g1 = gears[i];
-          const g2 = gears[j];
-
-          // Organic bezier curve connection with deterministic offsets plus slow animation
-          const offsetSeed = i * 13 + j * 17; // Deterministic seed
-          const baseOffsetX = (((offsetSeed * 31) % 60) - 30) * organicFlow;
-          const baseOffsetY = (((offsetSeed * 37) % 60) - 30) * organicFlow;
-
-          // Add gentle breathing motion
-          const breathingX = Math.sin(slowTime * 2 + i) * 10; // Increase amplitude from 5 to 10
-          const breathingY = Math.cos(slowTime * 1.5 + j) * 10; // Increase amplitude from 5 to 10
-
-          const midX = (g1.x + g2.x) / 2 + baseOffsetX + breathingX;
-          const midY = (g1.y + g2.y) / 2 + baseOffsetY + breathingY;
-
-          p.noFill();
-          p.strokeWeight(1.5);
-          p.bezier(
-            g1.x,
-            g1.y,
-            g1.x + (midX - g1.x) * 0.5,
-            g1.y + (midY - g1.y) * 0.3,
-            g2.x + (midX - g2.x) * 0.5,
-            g2.y + (midY - g2.y) * 0.3,
-            g2.x,
-            g2.y,
-          );
-        }
-      }
-    }
-
-    // Draw mechanical gears
-    for (const gear of gears) {
-      p.strokeWeight(2);
-
-      // Gear teeth
-      const angleStep = p.TWO_PI / gear.teeth;
-      for (let i = 0; i < gear.teeth; i++) {
-        const angle = i * angleStep + gear.rotation;
-        const innerRadius = gear.radius * 0.8;
-        const outerRadius = gear.radius * 1.1;
-
-        // Tooth shape
-        p.line(
-          gear.x + innerRadius * Math.cos(angle),
-          gear.y + innerRadius * Math.sin(angle),
-          gear.x + outerRadius * Math.cos(angle),
-          gear.y + outerRadius * Math.sin(angle),
-        );
-      }
-
-      // Gear body
-      p.circle(gear.x, gear.y, gear.radius * 1.6);
-      p.circle(gear.x, gear.y, gear.radius * 0.6);
-
-      // Center hub
-      p.strokeWeight(3);
-      p.circle(gear.x, gear.y, gear.radius * 0.3);
-    }
-  };
-
   const drawArchitecturalSchematic = (data: any, alpha: number) => {
     const size = data.size;
     const detailLevel = data.detailLevel;
@@ -2129,9 +2078,9 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
               ),
             ];
           } else if (rand < 0.33) {
-            // Add organic mechanism
+            // Add constellation (replacing organic mechanism)
             newElements = [
-              createOrganicMechanism(
+              createComplexConstellation(
                 p.random(p.width * 0.2, p.width * 0.8),
                 p.random(safeMinY, p.height * 0.7),
               ),
