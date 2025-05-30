@@ -47,6 +47,12 @@ const router = createHashRouter(
             Component: (await import('./routes/moon/MoonPage')).default,
           })}
         />
+        <Route
+          path="hourglass"
+          lazy={async () => ({
+            Component: (await import('./routes/moon/HourglassPage')).default,
+          })}
+        />
       </Route>
       <Route
         path="*"
