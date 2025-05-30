@@ -51,8 +51,8 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
   let frameCounter = 0;
   let nextElementTime = 0;
 
-  // Add delay constant for elements (60 frames = 1 second at 60fps)
-  const ELEMENT_DELAY_FRAMES = 60;
+  // Add delay constant for elements - set to 0 for immediate appearance
+  const ELEMENT_DELAY_FRAMES = 0; // Changed from 60 to 0
 
   // Store loaded images
   let photoPaths = [
@@ -1751,18 +1751,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     const organicFlow = data.organicFlow;
 
     // Add slow animation using element age
-    const slowTime = element ? element.age * 0.02 : 0; // Increase speed to make movement visible
-
-    // Debug logging (remove after testing)
-    if (element && element.age % 60 === 0) {
-      // Log every 60 frames (1 second)
-      console.log(
-        'Organic mechanism animation - age:',
-        element.age,
-        'slowTime:',
-        slowTime,
-      );
-    }
+    const slowTime = element ? element.age * 0.02 : 0; // Organic mechanism speed
 
     // Create gear-like mechanical elements with organic connections
     // Use deterministic values based on index instead of random
@@ -2076,25 +2065,14 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
       }
     }
 
-    // Only decrease delay counter after text is fully typed
-    if (
-      currentScene.typewriterProgress >= currentScene.totalCharacters &&
-      currentScene.delayBeforeElements > 0
-    ) {
-      currentScene.delayBeforeElements--;
-    }
-
     // Update existing elements
     currentScene.elements.forEach((element) => {
       element.age++;
       element.opacity = p.lerp(element.opacity, element.targetOpacity, 0.03);
     });
 
-    // Only start adding elements after the delay has passed AND text is fully typed
-    if (
-      currentScene.delayBeforeElements <= 0 &&
-      currentScene.typewriterProgress >= currentScene.totalCharacters
-    ) {
+    // Start adding elements as soon as text is fully typed
+    if (currentScene.typewriterProgress >= currentScene.totalCharacters) {
       // Create photo element if we haven't already and it's time
       if (!currentScene.photoElement && loadedPhotos.length > 0) {
         currentScene.photoElement = createPhotoElement();
