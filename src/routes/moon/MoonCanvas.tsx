@@ -3,6 +3,18 @@ import { getCanvasSize, improveTextRendering } from '@utils/canvas';
 import p5 from 'p5';
 import { POEM_LINES } from './poem';
 
+// Import all moon images
+import moon1 from '/images/moon/32608820776_04e7678543_o.jpg';
+import moon2 from '/images/moon/32608828106_b93033b4d8_o.jpg';
+import moon3 from '/images/moon/32608889646_19473634e7_o.jpg';
+import moon4 from '/images/moon/42704081100_76443f493c_o.avif';
+import moon5 from '/images/moon/43604217515_71f8b4fcc2_b.jpg';
+import moon6 from '/images/moon/44463917582_2e04c76044_b.jpg';
+import moon7 from '/images/moon/44513174051_33f271f1c8_b.jpg';
+import moon8 from '/images/moon/homebody-edit.avif';
+import moon9 from '/images/moon/ma-74529.jpg';
+import moon10 from '/images/moon/nov-2020-prints-new-00035.jpg';
+
 type SceneElement = {
   type:
     | 'photo'
@@ -56,16 +68,16 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
 
   // Store loaded images
   let photoPaths = [
-    'images/moon/32608820776_04e7678543_o.jpg',
-    'images/moon/32608828106_b93033b4d8_o.jpg',
-    'images/moon/32608889646_19473634e7_o.jpg',
-    'images/moon/42704081100_76443f493c_o.avif',
-    'images/moon/43604217515_71f8b4fcc2_b.jpg',
-    'images/moon/44463917582_2e04c76044_b.jpg',
-    'images/moon/44513174051_33f271f1c8_b.jpg',
-    'images/moon/homebody-edit.avif',
-    'images/moon/ma-74529.jpg',
-    'images/moon/nov-2020-prints-new-00035.jpg',
+    moon1,
+    moon2,
+    moon3,
+    moon4,
+    moon5,
+    moon6,
+    moon7,
+    moon8,
+    moon9,
+    moon10,
   ];
   let loadedPhotos: p5.Image[] = [];
 
