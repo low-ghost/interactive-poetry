@@ -611,31 +611,31 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
 
     switch (data.shapeType) {
       case 'abstract-3d':
-        drawAbstract3DForm(data, alpha);
+        drawAbstract3DForm(data);
         break;
       case 'intersecting-plane':
-        drawIntersectingPlane(data, alpha, element, currentScene!);
+        drawIntersectingPlane(data, element, currentScene!);
         break;
       case 'large-color-plane':
-        drawLargeColorPlane(data, alpha);
+        drawLargeColorPlane(data);
         break;
       case 'massive-plane':
-        drawMassivePlane(data, alpha);
+        drawMassivePlane(data);
         break;
       case 'layered-abstract':
         drawLayeredAbstractForm(data, alpha);
         break;
       case 'dynamic-form':
-        drawDynamicForm(data, alpha);
+        drawDynamicForm(data);
         break;
       default:
-        drawBasicShape(data, alpha);
+        drawBasicShape(data);
     }
 
     p.pop();
   };
 
-  const drawAbstract3DForm = (data: any, alpha: number) => {
+  const drawAbstract3DForm = (data: any) => {
     const perspective = data.perspective;
     const w = data.width;
     const h = data.height;
@@ -740,7 +740,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawDynamicForm = (data: any, alpha: number) => {
+  const drawDynamicForm = (data: any) => {
     const length = data.length;
     const thickness = data.thickness;
 
@@ -788,7 +788,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     p.endShape();
   };
 
-  const drawBasicShape = (data: any, alpha: number) => {
+  const drawBasicShape = (data: any) => {
     // Draw base shape with 3D perspective - fully opaque
     p.fill(p.red(data.color), p.green(data.color), p.blue(data.color), 255);
     p.stroke(20, 20, 25, 255);
@@ -871,7 +871,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawLargeColorPlane = (data: any, alpha: number) => {
+  const drawLargeColorPlane = (data: any) => {
     // Create large, solid color planes - no transparency
     p.fill(p.red(data.color), p.green(data.color), p.blue(data.color), 255);
     p.stroke(20, 20, 25, 200);
@@ -898,7 +898,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawMassivePlane = (data: any, alpha: number) => {
+  const drawMassivePlane = (data: any) => {
     // Solid massive planes - no transparency
     p.fill(p.red(data.color), p.green(data.color), p.blue(data.color), 255);
     p.noStroke();
@@ -918,126 +918,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
         p.line(-data.width / 2, y, data.width / 2, y);
       }
     }
-  };
-
-  const drawBlackboard = (element: SceneElement) => {
-    const data = element.data;
-    p.push();
-    p.translate(element.x, element.y);
-    p.rotate(element.rotation);
-
-    const alpha = element.opacity * 255;
-
-    // Draw blackboard with slight 3D effect
-    p.fill(40, 40, 45, alpha);
-    p.stroke(20, 20, 25, alpha);
-    p.strokeWeight(2);
-    p.rect(-data.width / 2, -data.height / 2, data.width, data.height);
-
-    // Add 3D depth
-    const depth = 8;
-    p.fill(30, 30, 35, alpha * 0.8);
-    p.beginShape();
-    p.vertex(data.width / 2, -data.height / 2);
-    p.vertex(data.width / 2 + depth, -data.height / 2 - depth);
-    p.vertex(data.width / 2 + depth, data.height / 2 - depth);
-    p.vertex(data.width / 2, data.height / 2);
-    p.endShape(p.CLOSE);
-
-    // Draw mathematical content
-    p.fill(250, 250, 245, alpha * 0.9);
-    p.noStroke();
-    p.textAlign(p.LEFT, p.TOP);
-    p.textSize(16);
-    p.textFont('Georgia, serif');
-
-    // Mathematical notations and constructions
-    const centerX = 0;
-    const centerY = 0;
-
-    // Draw geometric construction (like compass work)
-    p.stroke(250, 250, 245, alpha * 0.8);
-    p.strokeWeight(1);
-    p.noFill();
-
-    // Main circle construction
-    const radius = Math.min(data.width, data.height) * 0.2;
-    p.circle(centerX, centerY, radius * 2);
-
-    // Cross lines through center
-    p.line(centerX - radius, centerY, centerX + radius, centerY);
-    p.line(centerX, centerY - radius, centerX, centerY + radius);
-
-    // Angle construction
-    const angleRadius = radius * 1.5;
-    p.arc(centerX, centerY, angleRadius * 2, angleRadius * 2, 0, p.PI / 3);
-    p.line(
-      centerX,
-      centerY,
-      centerX + angleRadius * Math.cos(0),
-      centerY + angleRadius * Math.sin(0),
-    );
-    p.line(
-      centerX,
-      centerY,
-      centerX + angleRadius * Math.cos(p.PI / 3),
-      centerY + angleRadius * Math.sin(p.PI / 3),
-    );
-
-    // Add measurement marks
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * p.TWO_PI;
-      const x1 = centerX + radius * 0.9 * Math.cos(angle);
-      const y1 = centerY + radius * 0.9 * Math.sin(angle);
-      const x2 = centerX + radius * 1.1 * Math.cos(angle);
-      const y2 = centerY + radius * 1.1 * Math.sin(angle);
-      p.line(x1, y1, x2, y2);
-    }
-
-    // Add text annotations
-    p.fill(250, 250, 245, alpha * 0.9);
-    p.noStroke();
-    p.textSize(14);
-
-    // Left side annotations
-    data.notations.forEach((notation: string, i: number) => {
-      const x = -data.width / 2 + 15;
-      const y = -data.height / 2 + 20 + i * 25;
-      p.text(notation, x, y);
-    });
-
-    // Right side - architectural measurements
-    p.textAlign(p.RIGHT, p.TOP);
-    p.text('h = 120°', data.width / 2 - 15, -data.height / 2 + 20);
-    p.text('r = √2', data.width / 2 - 15, -data.height / 2 + 45);
-    p.text('∠ABC', data.width / 2 - 15, -data.height / 2 + 70);
-
-    // Draw construction lines connecting to the main drawing
-    p.stroke(250, 250, 245, alpha * 0.6);
-    p.strokeWeight(1);
-    p.line(
-      centerX + radius,
-      centerY,
-      data.width / 2 - 50,
-      -data.height / 2 + 35,
-    );
-    p.line(
-      centerX,
-      centerY - radius,
-      -data.width / 2 + 80,
-      -data.height / 2 + 25,
-    );
-
-    // Add small measurement indicators
-    p.stroke(250, 250, 245, alpha * 0.8);
-    p.strokeWeight(2);
-    p.point(
-      centerX + radius * Math.cos(p.PI / 6),
-      centerY + radius * Math.sin(p.PI / 6),
-    );
-    p.point(centerX - radius * 0.7, centerY + radius * 0.7);
-
-    p.pop();
   };
 
   const drawPhotoElement = (element: SceneElement) => {
@@ -1334,27 +1214,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     p.pop();
   };
 
-  const drawCircle = (element: SceneElement) => {
-    p.push();
-    p.translate(element.x, element.y);
-
-    const alpha = element.opacity * 255;
-    const color = element.data.color || palette.black();
-
-    if (element.data.filled) {
-      p.fill(p.red(color), p.green(color), p.blue(color), alpha);
-      p.noStroke();
-    } else {
-      p.noFill();
-      p.stroke(p.red(color), p.green(color), p.blue(color), alpha);
-      p.strokeWeight(2);
-    }
-
-    p.circle(0, 0, element.data.radius * 2);
-
-    p.pop();
-  };
-
   const drawThickRing = (element: SceneElement) => {
     p.push();
     p.translate(element.x, element.y);
@@ -1442,25 +1301,25 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
 
     switch (data.frameType) {
       case 'triangular':
-        drawTriangularFramework(data, alpha);
+        drawTriangularFramework(data);
         break;
       case 'rectangular':
-        drawRectangularFramework(data, alpha);
+        drawRectangularFramework(data);
         break;
       case 'radial':
-        drawRadialFramework(data, alpha);
+        drawRadialFramework(data);
         break;
       case 'complex':
-        drawComplexFramework(data, alpha);
+        drawComplexFramework(data);
         break;
       case 'constellation':
-        drawConstellation(data, alpha, element);
+        drawConstellation(data, element);
         break;
       case 'modular-grid':
-        drawModularGrid(data, alpha);
+        drawModularGrid(data);
         break;
       case 'architectural-schematic':
-        drawArchitecturalSchematic(data, alpha);
+        drawArchitecturalSchematic(data);
         break;
     }
 
@@ -1516,7 +1375,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawTriangularFramework = (data: any, alpha: number) => {
+  const drawTriangularFramework = (data: any) => {
     const size = data.size;
     const complexity = data.complexity;
 
@@ -1535,7 +1394,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     p.line(-size / 2, size / 2, size / 2, size / 2);
   };
 
-  const drawRectangularFramework = (data: any, alpha: number) => {
+  const drawRectangularFramework = (data: any) => {
     const size = data.size;
     const complexity = data.complexity;
 
@@ -1559,7 +1418,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawRadialFramework = (data: any, alpha: number) => {
+  const drawRadialFramework = (data: any) => {
     const size = data.size;
     const complexity = data.complexity;
 
@@ -1579,7 +1438,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawComplexFramework = (data: any, alpha: number) => {
+  const drawComplexFramework = (data: any) => {
     const size = data.size;
     const complexity = data.complexity;
 
@@ -1605,11 +1464,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawConstellation = (
-    data: any,
-    alpha: number,
-    element?: SceneElement,
-  ) => {
+  const drawConstellation = (data: any, element?: SceneElement) => {
     const size = data.size;
     const nodeCount = data.nodeCount;
     const connectionDensity = data.connectionDensity;
@@ -1680,7 +1535,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawModularGrid = (data: any, alpha: number) => {
+  const drawModularGrid = (data: any) => {
     const size = data.size;
     const complexity = data.complexity;
     const fillDensity = data.fillDensity;
@@ -1789,7 +1644,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     }
   };
 
-  const drawArchitecturalSchematic = (data: any, alpha: number) => {
+  const drawArchitecturalSchematic = (data: any) => {
     const size = data.size;
     const detailLevel = data.detailLevel;
     const structureType = data.structureType;
@@ -2328,12 +2183,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
             break;
           case 'textured-shape':
             if (element.data.shapeType === 'intersecting-plane') {
-              drawIntersectingPlane(
-                element.data,
-                element.opacity * 255,
-                element,
-                currentScene!,
-              );
+              drawIntersectingPlane(element.data, element, currentScene!);
             } else {
               drawTexturedShape(element);
             }
@@ -2406,7 +2256,6 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
 
   const drawIntersectingPlane = (
     data: any,
-    alpha: number,
     element: SceneElement,
     scene: Scene,
   ) => {

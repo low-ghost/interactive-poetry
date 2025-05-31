@@ -406,7 +406,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     frameCounter++;
     updateCycle();
 
-    const [width, height] = getCanvasSize(p);
+    const [width] = getCanvasSize(p);
 
     if (morphProgress < 1.0) {
       const smoothProgress = 0.5 - 0.5 * Math.cos(morphProgress * Math.PI);
