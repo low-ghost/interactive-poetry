@@ -1,3 +1,4 @@
+import { AppRoutes } from '@type/routes';
 import {
   Route,
   RouterProvider,
@@ -17,40 +18,40 @@ const router = createHashRouter(
           })}
         />
         <Route
-          path="simple-demo"
+          path={AppRoutes.SIMPLE_DEMO}
           lazy={async () => ({
             Component: (await import('./routes/simple-demo/SimpleDemoPage'))
               .default,
           })}
         />
         <Route
-          path="ripple"
+          path={AppRoutes.RIPPLE}
           lazy={async () => ({
             Component: (await import('./routes/ripple/RipplePage')).default,
           })}
         />
         <Route
-          path="forest"
+          path={AppRoutes.FOREST}
           lazy={async () => ({
             Component: (await import('./routes/forest/ForestPage')).default,
           })}
         />
         <Route
-          path="towards"
+          path={AppRoutes.TOWARDS}
           lazy={async () => ({
             Component: (await import('./routes/towards/TowardsPage')).default,
           })}
         />
         <Route
-          path="moon"
+          path={AppRoutes.MOON}
           lazy={async () => ({
             Component: (await import('./routes/moon/MoonPage')).default,
           })}
         />
         <Route
-          path="hourglass"
+          path={AppRoutes.ALPHABET}
           lazy={async () => ({
-            Component: (await import('./routes/moon/HourglassPage')).default,
+            Component: (await import('./routes/alphabet/AlphabetPage')).default,
           })}
         />
       </Route>

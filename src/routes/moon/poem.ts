@@ -39,30 +39,4 @@ Wear your best things.
 How better to shine good
 light on our ghosts?`;
 
-export const POEM_WORDS = POEM.split(/\s+/).filter(
-  (word) => word.trim().length > 0,
-);
-
 export const POEM_LINES = POEM.split('\n');
-
-// Key phrases for visual emphasis
-export const KEY_PHRASES = [
-  'moth no one sees',
-  'Powder feather whisper',
-  'fire takes a factory',
-  'workers locked inside',
-  'Shrine of footprints',
-  'Shrine of smoke',
-  'unauthorized territory',
-  'Wear your best things',
-  'shine good light on our ghosts',
-];
-
-// Animation states
-export const ANIMATION_STATES = {
-  MOTH: 'moth',
-  FACTORY: 'factory',
-  SHRINE: 'shrine',
-  TRESPASS: 'trespass',
-  GHOSTS: 'ghosts',
-} as const;

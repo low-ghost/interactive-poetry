@@ -18,6 +18,8 @@ type CanvasLayoutProps = {
   githubLink?: string;
   /** The example number in the slides (1-4) */
   slideExampleNumber?: number;
+  /** Whether to hide the slides link */
+  hideSlides?: boolean;
 };
 
 /**
@@ -29,6 +31,7 @@ const CanvasLayout = ({
   children,
   githubLink,
   slideExampleNumber,
+  hideSlides = false,
 }: CanvasLayoutProps) => {
   // Generate a unique ID for the canvas container
   const canvasContainerId = useId().replace(/:/g, '-') + 'canvas-container';
@@ -62,17 +65,19 @@ const CanvasLayout = ({
                 <span>Source</span>
               </a>
             )}
-            <a
-              href={slidesUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="View slides"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Presentation className="h-4 w-4" />
-              <span>Slides</span>
-            </a>
+            {!hideSlides && (
+              <a
+                href={slidesUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="View slides"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Presentation className="h-4 w-4" />
+                <span>Slides</span>
+              </a>
+            )}
           </div>
         </div>
       </div>

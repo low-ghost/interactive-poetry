@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 import { sketch as forestSketch } from '@routes/forest/ForestCanvas';
-import { sketch as moonSketch } from '@routes/moon/MoonCanvas';
 import { sketch as rippleSketch } from '@routes/ripple/RippleCanvas';
 import { sketch as simpleDemoSketch } from '@routes/simple-demo/SimpleDemoCanvas';
 import { sketch as towardsSketch } from '@routes/towards/TowardsCanvas';
@@ -49,19 +48,6 @@ const ForestPreview = () => (
 const TowardsPreview = () => (
   <div className="w-full h-full">
     <ReactP5Wrapper sketch={towardsSketch} />
-  </div>
-);
-
-const MoonPreview = () => (
-  <div className="w-full h-full">
-    <ReactP5Wrapper
-      sketch={moonSketch}
-      buildSpeed={0.6}
-      mathematicalDensity={0.5}
-      textureIntensity={0.6}
-      colorAccents={0.2}
-      compositionSparsity={0.9}
-    />
   </div>
 );
 
@@ -207,14 +193,6 @@ const HomePage = () => (
           description="Movement and direction-based interactions"
           previewComponent={<TowardsPreview />}
           delay={0.3}
-        />
-
-        <CanvasCard
-          to="/moon"
-          title="Shrine of Footprints"
-          description="Russian Futurist-inspired animated poem exploring grief, presence, and trespass"
-          previewComponent={<MoonPreview />}
-          delay={0.4}
         />
       </div>
     </motion.section>

@@ -13,6 +13,7 @@ type GenericCanvasPageProps = {
   CanvasComponent: LazyExoticComponent<() => JSX.Element>;
   fallback?: ReactNode; // Allow overriding the default fallback if needed
   slideExampleNumber?: number; // The example number in the slides (1-4)
+  hideSlides?: boolean;
 };
 
 const GenericCanvasPage = ({
@@ -22,12 +23,14 @@ const GenericCanvasPage = ({
   CanvasComponent,
   fallback = DefaultFallback, // Use the default fallback
   slideExampleNumber,
+  hideSlides = false,
 }: GenericCanvasPageProps) => (
   <CanvasLayout
     title={title}
     description={description}
     githubLink={githubLink}
     slideExampleNumber={slideExampleNumber}
+    hideSlides={hideSlides}
   >
     <Suspense fallback={fallback}>
       <CanvasComponent />

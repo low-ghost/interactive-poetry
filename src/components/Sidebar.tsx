@@ -1,6 +1,7 @@
 import { useIsMobile } from '@hooks/useIsMobile';
 import { AppRoutes } from '@type/routes';
 import {
+  BookOpen,
   ChevronsLeft,
   ChevronsRight,
   Home,
@@ -18,31 +19,43 @@ const navigationConfig = [
     path: AppRoutes.HOME,
     label: 'Home',
     icon: <Home size={24} />,
+    protected: false,
   },
   {
     path: AppRoutes.SIMPLE_DEMO,
     label: 'Simple Demo',
     icon: <MousePointer size={24} />,
+    protected: false,
   },
   {
     path: AppRoutes.RIPPLE,
     label: 'Ripple Effect',
     icon: <Waves size={24} />,
+    protected: false,
   },
   {
     path: AppRoutes.FOREST,
     label: 'Forest',
     icon: <TreePine size={24} />,
+    protected: false,
   },
   {
     path: AppRoutes.TOWARDS,
     label: 'Towards',
     icon: <Image size={24} />,
+    protected: false,
   },
   {
     path: AppRoutes.MOON,
-    label: 'Shrine of Footprints',
+    label: 'Furcula Borealis',
     icon: <Moon size={24} />,
+    protected: true,
+  },
+  {
+    path: AppRoutes.ALPHABET,
+    label: "Someone Else's Alphabet",
+    icon: <BookOpen size={24} />,
+    protected: true,
   },
 ];
 
@@ -94,20 +107,25 @@ const Sidebar = ({
             </div>
             <nav className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-4">
-                {navigationConfig.map((item) => (
-                  <li key={item.path}>
-                    <Link
-                      to={item.path}
-                      className={`flex items-center py-3 px-4 rounded-md hover:bg-gray-700 ${
-                        location.pathname === item.path ? 'bg-gray-700' : ''
-                      }`}
-                      onClick={toggleSidebar}
-                    >
-                      <span className="text-white">{item.icon}</span>
-                      <span className="ml-4 text-white">{item.label}</span>
-                    </Link>
-                  </li>
-                ))}
+                {navigationConfig.map((item) => {
+                  const path = `/${item.path}`;
+                  return (
+                    <li key={item.path}>
+                      <Link
+                        to={path}
+                        className={`flex items-center py-3 px-4 rounded-md hover:bg-gray-700 ${
+                          location.pathname === path ? 'bg-gray-700' : ''
+                        }`}
+                        onClick={toggleSidebar}
+                      >
+                        <span className="text-white">{item.icon}</span>
+                        <span className="ml-4 text-white flex items-center gap-2">
+                          {item.label}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </nav>
 
@@ -171,7 +189,7 @@ const Sidebar = ({
                     </span>
                     <span
                       className={`ml-4 text-gray-800 dark:text-gray-200 ${
-                        sidebarOpen ? 'block' : 'hidden'
+                        sidebarOpen ? 'flex items-center gap-2' : 'hidden'
                       }`}
                     >
                       {item.label}
