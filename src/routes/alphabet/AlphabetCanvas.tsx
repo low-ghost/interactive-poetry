@@ -11,6 +11,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
   let currentPoemIndex = 0;
   let transitionProgress = 0;
   let nextChangeTime = 600;
+  let lastClickTime = 0;
 
   let curves: { x: number; y: number }[][] = [];
   let targetCurves: { x: number; y: number }[][] = [];
@@ -41,6 +42,13 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     const [width, height] = getCanvasSize(p);
     mouseX = (p.mouseX / width - 0.5) * 2;
     mouseY = (p.mouseY / height - 0.5) * 2;
+  };
+
+  p.mousePressed = () => {
+    if (frameCounter - lastClickTime > 30) {
+      nextChangeTime = frameCounter;
+      lastClickTime = frameCounter;
+    }
   };
 
   const initCurves = () => {
@@ -218,16 +226,16 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
       (POEM_LINES[idx] || '').replace(/\s+/g, '').split('');
 
     currentLetters = [
-      getLineLetters(currentPoemIndex),
-      getLineLetters(currentPoemIndex + 1),
-      getLineLetters(currentPoemIndex + 2),
+      getLineLetters(currentPoemIndex % POEM_LINES.length),
+      getLineLetters((currentPoemIndex + 1) % POEM_LINES.length),
+      getLineLetters((currentPoemIndex + 2) % POEM_LINES.length),
     ];
 
     const nextIdx = (currentPoemIndex + 3) % POEM_LINES.length;
     nextLetters = [
-      getLineLetters(nextIdx),
-      getLineLetters(nextIdx + 1),
-      getLineLetters(nextIdx + 2),
+      getLineLetters(nextIdx % POEM_LINES.length),
+      getLineLetters((nextIdx + 1) % POEM_LINES.length),
+      getLineLetters((nextIdx + 2) % POEM_LINES.length),
     ];
   };
 
@@ -303,7 +311,7 @@ export const sketch = (p: P5CanvasInstance<SketchProps>) => {
     p.textAlign(p.LEFT, p.TOP);
 
     const getCurrentLine = (idx: number) =>
-      POEM_LINES[currentPoemIndex + idx] || '';
+      POEM_LINES[(currentPoemIndex + idx) % POEM_LINES.length] || '';
     const getNextLine = (idx: number) =>
       POEM_LINES[(currentPoemIndex + 3 + idx) % POEM_LINES.length] || '';
 

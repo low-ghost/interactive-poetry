@@ -15,7 +15,7 @@ export const encryptString = (
       str.charCodeAt(i) ^ key.charCodeAt(i % key.length),
     );
   }
-  return btoa(result); // Base64 encode the result
+  return btoa(unescape(encodeURIComponent(result))); // Base64 encode the result
 };
 
 export const decryptString = (
@@ -23,7 +23,7 @@ export const decryptString = (
   key: string = ENCRYPTION_KEY,
 ): string => {
   try {
-    const decoded = atob(encryptedStr); // Base64 decode
+    const decoded = decodeURIComponent(escape(atob(encryptedStr))); // Base64 decode
     let result = '';
     for (let i = 0; i < decoded.length; i++) {
       result += String.fromCharCode(
@@ -31,7 +31,8 @@ export const decryptString = (
       );
     }
     return result;
-  } catch {
+  } catch (e) {
+    console.error('Failed to decrypt string', e);
     return '';
   }
 };
